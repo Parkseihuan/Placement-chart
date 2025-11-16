@@ -6,6 +6,10 @@ class OrgChartApp {
         this.draggedNode = null;
         this.dragOffset = { x: 0, y: 0 };
         this.nextId = 1;
+        this.zoomLevel = 1;
+        this.minZoom = 0.25;
+        this.maxZoom = 2;
+        this.zoomStep = 0.25;
 
         this.initElements();
         this.initEventListeners();
@@ -21,6 +25,8 @@ class OrgChartApp {
         this.modalTitle = document.getElementById('modalTitle');
         this.fileInput = document.getElementById('fileInput');
         this.csvInput = document.getElementById('csvInput');
+        this.zoomWrapper = document.getElementById('zoomWrapper');
+        this.zoomIndicator = document.getElementById('zoomIndicator');
     }
 
     initEventListeners() {
@@ -28,6 +34,9 @@ class OrgChartApp {
         document.getElementById('importCsvBtn').addEventListener('click', () => this.csvInput.click());
         document.getElementById('addRootBtn').addEventListener('click', () => this.showAddNodeModal());
         document.getElementById('autoLayoutBtn').addEventListener('click', () => this.autoLayout());
+        document.getElementById('zoomInBtn').addEventListener('click', () => this.zoomIn());
+        document.getElementById('zoomOutBtn').addEventListener('click', () => this.zoomOut());
+        document.getElementById('zoomResetBtn').addEventListener('click', () => this.zoomReset());
         document.getElementById('exportBtn').addEventListener('click', () => this.exportAsImage());
         document.getElementById('saveDataBtn').addEventListener('click', () => this.saveToFile());
         document.getElementById('loadDataBtn').addEventListener('click', () => this.fileInput.click());
@@ -35,6 +44,18 @@ class OrgChartApp {
         // File input
         this.fileInput.addEventListener('change', (e) => this.loadFromFile(e));
         this.csvInput.addEventListener('change', (e) => this.loadFromCsv(e));
+
+        // Mouse wheel zoom
+        document.querySelector('.canvas-container').addEventListener('wheel', (e) => {
+            if (e.ctrlKey) {
+                e.preventDefault();
+                if (e.deltaY < 0) {
+                    this.zoomIn();
+                } else {
+                    this.zoomOut();
+                }
+            }
+        }, { passive: false });
 
         // Modal events
         this.nodeForm.addEventListener('submit', (e) => this.handleFormSubmit(e));
@@ -158,9 +179,18 @@ class OrgChartApp {
         const element = document.getElementById(nodeId);
 
         this.draggedNode = node;
+
+        // Account for zoom level
+        const canvasRect = document.querySelector('.canvas-container').getBoundingClientRect();
+        const scrollLeft = document.querySelector('.canvas-container').scrollLeft;
+        const scrollTop = document.querySelector('.canvas-container').scrollTop;
+
+        const mouseX = (e.clientX - canvasRect.left + scrollLeft) / this.zoomLevel;
+        const mouseY = (e.clientY - canvasRect.top + scrollTop) / this.zoomLevel;
+
         this.dragOffset = {
-            x: e.clientX - node.x,
-            y: e.clientY - node.y
+            x: mouseX - node.x,
+            y: mouseY - node.y
         };
 
         element.classList.add('dragging');
@@ -170,8 +200,13 @@ class OrgChartApp {
     handleMouseMove(e) {
         if (!this.draggedNode) return;
 
-        const newX = e.clientX - this.dragOffset.x;
-        const newY = e.clientY - this.dragOffset.y;
+        // Account for zoom level in drag calculations
+        const canvasRect = document.querySelector('.canvas-container').getBoundingClientRect();
+        const scrollLeft = document.querySelector('.canvas-container').scrollLeft;
+        const scrollTop = document.querySelector('.canvas-container').scrollTop;
+
+        const newX = (e.clientX - canvasRect.left + scrollLeft) / this.zoomLevel - this.dragOffset.x;
+        const newY = (e.clientY - canvasRect.top + scrollTop) / this.zoomLevel - this.dragOffset.y;
 
         // Update position
         this.draggedNode.x = Math.max(0, newX);
@@ -728,6 +763,31 @@ class OrgChartApp {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    // Zoom functionality
+    zoomIn() {
+        if (this.zoomLevel < this.maxZoom) {
+            this.zoomLevel = Math.min(this.maxZoom, this.zoomLevel + this.zoomStep);
+            this.applyZoom();
+        }
+    }
+
+    zoomOut() {
+        if (this.zoomLevel > this.minZoom) {
+            this.zoomLevel = Math.max(this.minZoom, this.zoomLevel - this.zoomStep);
+            this.applyZoom();
+        }
+    }
+
+    zoomReset() {
+        this.zoomLevel = 1;
+        this.applyZoom();
+    }
+
+    applyZoom() {
+        this.zoomWrapper.style.transform = `scale(${this.zoomLevel})`;
+        this.zoomIndicator.textContent = `${Math.round(this.zoomLevel * 100)}%`;
     }
 }
 

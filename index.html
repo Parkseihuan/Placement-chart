@@ -14,6 +14,9 @@
                 <button id="importCsvBtn" class="btn btn-primary">CSV 불러오기</button>
                 <button id="addRootBtn" class="btn btn-secondary">최상위 부서 추가</button>
                 <button id="autoLayoutBtn" class="btn btn-secondary">자동 배치</button>
+                <button id="zoomInBtn" class="btn btn-secondary">확대 +</button>
+                <button id="zoomOutBtn" class="btn btn-secondary">축소 -</button>
+                <button id="zoomResetBtn" class="btn btn-secondary">100%</button>
                 <button id="exportBtn" class="btn btn-secondary">이미지 저장</button>
                 <button id="saveDataBtn" class="btn btn-secondary">데이터 저장</button>
                 <button id="loadDataBtn" class="btn btn-secondary">데이터 불러오기</button>
@@ -21,9 +24,13 @@
         </header>
 
         <main class="canvas-container">
-            <svg id="connections"></svg>
-            <div id="orgChart"></div>
+            <div id="zoomWrapper">
+                <svg id="connections"></svg>
+                <div id="orgChart"></div>
+            </div>
         </main>
+
+        <div id="zoomIndicator">100%</div>
 
         <!-- 노드 편집 모달 -->
         <div id="nodeModal" class="modal hidden">
