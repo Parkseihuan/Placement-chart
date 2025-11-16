@@ -20,10 +20,12 @@ class OrgChartApp {
         this.contextMenu = document.getElementById('contextMenu');
         this.modalTitle = document.getElementById('modalTitle');
         this.fileInput = document.getElementById('fileInput');
+        this.csvInput = document.getElementById('csvInput');
     }
 
     initEventListeners() {
         // Toolbar buttons
+        document.getElementById('importCsvBtn').addEventListener('click', () => this.csvInput.click());
         document.getElementById('addRootBtn').addEventListener('click', () => this.showAddNodeModal());
         document.getElementById('autoLayoutBtn').addEventListener('click', () => this.autoLayout());
         document.getElementById('exportBtn').addEventListener('click', () => this.exportAsImage());
@@ -32,6 +34,7 @@ class OrgChartApp {
 
         // File input
         this.fileInput.addEventListener('change', (e) => this.loadFromFile(e));
+        this.csvInput.addEventListener('change', (e) => this.loadFromCsv(e));
 
         // Modal events
         this.nodeForm.addEventListener('submit', (e) => this.handleFormSubmit(e));
@@ -526,6 +529,143 @@ class OrgChartApp {
 
         // Reset file input
         e.target.value = '';
+    }
+
+    // CSV Import
+    loadFromCsv(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const csvData = event.target.result;
+                this.parseCsvAndGenerate(csvData);
+                alert('CSV 데이터를 성공적으로 불러왔습니다.');
+            } catch (err) {
+                alert('CSV 파일을 불러오는데 실패했습니다. 형식을 확인해주세요.\n\n' +
+                      '필요한 컬럼: 부서코드, 부서명, 상위부서코드, 보직, 성명');
+                console.error(err);
+            }
+        };
+        reader.readAsText(file);
+
+        // Reset file input
+        e.target.value = '';
+    }
+
+    parseCsvAndGenerate(csvText) {
+        // Parse CSV
+        const lines = csvText.trim().split('\n');
+        if (lines.length < 2) {
+            throw new Error('CSV 파일에 데이터가 없습니다.');
+        }
+
+        // Parse header
+        const headers = this.parseCsvLine(lines[0]);
+        const headerMap = {};
+        headers.forEach((h, i) => {
+            headerMap[h.trim()] = i;
+        });
+
+        // Validate required columns
+        const requiredColumns = ['부서코드', '부서명', '상위부서코드', '보직', '성명'];
+        const missingColumns = requiredColumns.filter(col => !(col in headerMap));
+        if (missingColumns.length > 0) {
+            throw new Error(`필수 컬럼이 없습니다: ${missingColumns.join(', ')}`);
+        }
+
+        // Parse data rows
+        const orgData = [];
+        for (let i = 1; i < lines.length; i++) {
+            const values = this.parseCsvLine(lines[i]);
+            if (values.length >= headers.length) {
+                orgData.push({
+                    code: values[headerMap['부서코드']].trim(),
+                    deptName: values[headerMap['부서명']].trim(),
+                    parentCode: values[headerMap['상위부서코드']].trim(),
+                    position: values[headerMap['보직']].trim(),
+                    personName: values[headerMap['성명']].trim()
+                });
+            }
+        }
+
+        if (orgData.length === 0) {
+            throw new Error('CSV 파일에 데이터가 없습니다.');
+        }
+
+        // Clear existing nodes
+        this.orgChart.innerHTML = '';
+        this.nodes.clear();
+        this.nextId = 1;
+
+        // Create a mapping from code to node id
+        const codeToNodeId = new Map();
+
+        // First pass: create all nodes without parent relationships
+        orgData.forEach(row => {
+            const nodeId = `node-${this.nextId++}`;
+            codeToNodeId.set(row.code, nodeId);
+
+            const node = {
+                id: nodeId,
+                deptName: row.deptName,
+                position: row.position,
+                personName: row.personName,
+                parentId: null,
+                x: 100,
+                y: 100,
+                _code: row.code,
+                _parentCode: row.parentCode
+            };
+            this.nodes.set(nodeId, node);
+        });
+
+        // Second pass: establish parent relationships
+        this.nodes.forEach(node => {
+            if (node._parentCode && codeToNodeId.has(node._parentCode)) {
+                node.parentId = codeToNodeId.get(node._parentCode);
+            }
+            // Clean up temporary properties
+            delete node._code;
+            delete node._parentCode;
+        });
+
+        // Render all nodes
+        this.nodes.forEach(node => {
+            this.renderNode(node);
+        });
+
+        // Auto-layout the chart
+        this.autoLayout();
+        this.saveToLocalStorage();
+    }
+
+    parseCsvLine(line) {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+
+            if (char === '"') {
+                if (inQuotes && line[i + 1] === '"') {
+                    current += '"';
+                    i++;
+                } else {
+                    inQuotes = !inQuotes;
+                }
+            } else if (char === ',' && !inQuotes) {
+                result.push(current);
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+        result.push(current);
+
+        return result;
     }
 
     exportAsImage() {
