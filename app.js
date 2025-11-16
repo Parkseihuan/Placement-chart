@@ -27,6 +27,7 @@ class OrgChartApp {
         this.csvInput = document.getElementById('csvInput');
         this.zoomWrapper = document.getElementById('zoomWrapper');
         this.zoomIndicator = document.getElementById('zoomIndicator');
+        this.snapIndicator = document.getElementById('snapIndicator');
     }
 
     initEventListeners() {
@@ -37,7 +38,6 @@ class OrgChartApp {
         document.getElementById('zoomInBtn').addEventListener('click', () => this.zoomIn());
         document.getElementById('zoomOutBtn').addEventListener('click', () => this.zoomOut());
         document.getElementById('zoomResetBtn').addEventListener('click', () => this.zoomReset());
-        document.getElementById('exportBtn').addEventListener('click', () => this.exportAsImage());
         document.getElementById('saveDataBtn').addEventListener('click', () => this.saveToFile());
         document.getElementById('loadDataBtn').addEventListener('click', () => this.fileInput.click());
 
@@ -69,6 +69,7 @@ class OrgChartApp {
         document.addEventListener('mousemove', (e) => this.handleMouseMove(e));
         document.addEventListener('mouseup', (e) => this.handleMouseUp(e));
         document.addEventListener('keydown', (e) => this.handleKeyDown(e));
+        document.addEventListener('keyup', (e) => this.handleKeyUp(e));
 
         // Prevent context menu on canvas
         this.orgChart.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -195,6 +196,11 @@ class OrgChartApp {
 
         element.classList.add('dragging');
         this.selectNode(nodeId);
+
+        // Show snap indicator if Shift is already pressed
+        if (e.shiftKey) {
+            this.snapIndicator.classList.remove('hidden');
+        }
     }
 
     handleMouseMove(e) {
@@ -205,8 +211,18 @@ class OrgChartApp {
         const scrollLeft = document.querySelector('.canvas-container').scrollLeft;
         const scrollTop = document.querySelector('.canvas-container').scrollTop;
 
-        const newX = (e.clientX - canvasRect.left + scrollLeft) / this.zoomLevel - this.dragOffset.x;
-        const newY = (e.clientY - canvasRect.top + scrollTop) / this.zoomLevel - this.dragOffset.y;
+        let newX = (e.clientX - canvasRect.left + scrollLeft) / this.zoomLevel - this.dragOffset.x;
+        let newY = (e.clientY - canvasRect.top + scrollTop) / this.zoomLevel - this.dragOffset.y;
+
+        // Snap to grid when Shift key is held (20px grid)
+        if (e.shiftKey) {
+            const gridSize = 20;
+            newX = Math.round(newX / gridSize) * gridSize;
+            newY = Math.round(newY / gridSize) * gridSize;
+            this.snapIndicator.classList.remove('hidden');
+        } else {
+            this.snapIndicator.classList.add('hidden');
+        }
 
         // Update position
         this.draggedNode.x = Math.max(0, newX);
@@ -226,6 +242,7 @@ class OrgChartApp {
         element.classList.remove('dragging');
 
         this.draggedNode = null;
+        this.snapIndicator.classList.add('hidden');
         this.saveToLocalStorage();
     }
 
@@ -437,6 +454,18 @@ class OrgChartApp {
                     this.deleteNode(this.selectedNode);
                 }
             }
+        }
+
+        // Show snap indicator when Shift is pressed
+        if (e.key === 'Shift' && this.draggedNode) {
+            this.snapIndicator.classList.remove('hidden');
+        }
+    }
+
+    handleKeyUp(e) {
+        // Hide snap indicator when Shift is released
+        if (e.key === 'Shift') {
+            this.snapIndicator.classList.add('hidden');
         }
     }
 
@@ -748,14 +777,6 @@ class OrgChartApp {
         result.push(current);
 
         return result;
-    }
-
-    exportAsImage() {
-        // Using html2canvas would be ideal, but for simplicity we'll use a basic approach
-        alert('이미지 저장 기능을 사용하려면 브라우저의 스크린샷 기능을 이용하거나\n' +
-              'html2canvas 라이브러리를 추가해주세요.\n\n' +
-              'Windows: Win + Shift + S\n' +
-              'Mac: Cmd + Shift + 4');
     }
 
     // Utility

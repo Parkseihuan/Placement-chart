@@ -117,6 +117,23 @@ body {
     z-index: 1000;
 }
 
+#snapIndicator {
+    position: fixed;
+    bottom: 60px;
+    right: 20px;
+    background: rgba(46, 204, 113, 0.9);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 1000;
+}
+
+#snapIndicator.hidden {
+    display: none;
+}
+
 /* Org Node */
 .org-node {
     position: absolute;
