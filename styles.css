@@ -135,8 +135,37 @@ body {
 }
 
 .node-body {
-    padding: 10px 15px;
-    text-align: center;
+    padding: 8px 12px;
+}
+
+.member-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 0;
+    font-size: 12px;
+    border-bottom: 1px solid #ecf0f1;
+}
+
+.member-row:last-child {
+    border-bottom: none;
+}
+
+.member-position {
+    color: #7f8c8d;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.member-position::after {
+    content: ':';
+    margin-right: 8px;
+}
+
+.member-name {
+    color: #2c3e50;
+    font-weight: 600;
+    text-align: right;
 }
 
 .node-position {

@@ -59,8 +59,7 @@ class OrgChartApp {
         const node = {
             id,
             deptName: data.deptName || '새 부서',
-            position: data.position || '',
-            personName: data.personName || '',
+            members: data.members || [{ position: data.position || '', name: data.personName || '' }],
             parentId: data.parentId || null,
             x: data.x || 100,
             y: data.y || 100
@@ -81,11 +80,21 @@ class OrgChartApp {
         element.style.left = `${node.x}px`;
         element.style.top = `${node.y}px`;
 
+        // Generate members HTML
+        let membersHtml = '';
+        if (node.members && node.members.length > 0) {
+            membersHtml = node.members.map(member => `
+                <div class="member-row">
+                    <span class="member-position">${this.escapeHtml(member.position)}</span>
+                    <span class="member-name">${this.escapeHtml(member.name)}</span>
+                </div>
+            `).join('');
+        }
+
         element.innerHTML = `
             <div class="node-header">${this.escapeHtml(node.deptName)}</div>
             <div class="node-body">
-                <div class="node-position">${this.escapeHtml(node.position)}</div>
-                <div class="node-name">${this.escapeHtml(node.personName)}</div>
+                ${membersHtml}
             </div>
         `;
 
@@ -101,8 +110,18 @@ class OrgChartApp {
         if (!element) return;
 
         element.querySelector('.node-header').textContent = node.deptName;
-        element.querySelector('.node-position').textContent = node.position;
-        element.querySelector('.node-name').textContent = node.personName;
+
+        // Update members
+        let membersHtml = '';
+        if (node.members && node.members.length > 0) {
+            membersHtml = node.members.map(member => `
+                <div class="member-row">
+                    <span class="member-position">${this.escapeHtml(member.position)}</span>
+                    <span class="member-name">${this.escapeHtml(member.name)}</span>
+                </div>
+            `).join('');
+        }
+        element.querySelector('.node-body').innerHTML = membersHtml;
     }
 
     deleteNode(nodeId) {
@@ -391,13 +410,20 @@ class OrgChartApp {
         const rootNodes = Array.from(this.nodes.values()).filter(n => !n.parentId);
         if (rootNodes.length === 0) return;
 
+        // Get actual node widths
+        const getNodeWidth = (nodeId) => {
+            const element = document.getElementById(nodeId);
+            return element ? Math.max(element.offsetWidth, 180) : 180;
+        };
+
         // Calculate tree structure
         const layoutTree = (node, level, offset) => {
             const children = this.getChildren(node.id);
+            const nodeWidth = getNodeWidth(node.id);
             let totalWidth = 0;
 
             if (children.length === 0) {
-                totalWidth = 180;
+                totalWidth = nodeWidth + 20;
             } else {
                 children.forEach(child => {
                     totalWidth += layoutTree(child, level + 1, offset + totalWidth);
@@ -405,9 +431,9 @@ class OrgChartApp {
             }
 
             // Center this node above its children
-            const nodeWidth = Math.max(totalWidth, 180);
-            node.x = offset + nodeWidth / 2 - 75;
-            node.y = 100 + level * 150;
+            const finalWidth = Math.max(totalWidth, nodeWidth + 20);
+            node.x = offset + finalWidth / 2 - nodeWidth / 2;
+            node.y = 100 + level * 200;
 
             const element = document.getElementById(node.id);
             if (element) {
@@ -415,7 +441,7 @@ class OrgChartApp {
                 element.style.top = `${node.y}px`;
             }
 
-            return nodeWidth;
+            return finalWidth;
         };
 
         let totalOffset = 100;
@@ -424,7 +450,10 @@ class OrgChartApp {
             totalOffset += width + 50;
         });
 
-        this.updateConnections();
+        // Update connections after layout
+        setTimeout(() => {
+            this.updateConnections();
+        }, 50);
         this.saveToLocalStorage();
     }
 
@@ -454,8 +483,7 @@ class OrgChartApp {
                 const node = {
                     id: nodeData.id,
                     deptName: nodeData.deptName,
-                    position: nodeData.position,
-                    personName: nodeData.personName,
+                    members: nodeData.members || [{ position: nodeData.position || '', name: nodeData.personName || '' }],
                     parentId: nodeData.parentId,
                     x: nodeData.x,
                     y: nodeData.y
@@ -464,7 +492,9 @@ class OrgChartApp {
                 this.renderNode(node);
             });
 
-            this.updateConnections();
+            setTimeout(() => {
+                this.updateConnections();
+            }, 100);
         } catch (e) {
             console.error('Failed to load data:', e);
         }
@@ -507,8 +537,7 @@ class OrgChartApp {
                     const node = {
                         id: nodeData.id,
                         deptName: nodeData.deptName,
-                        position: nodeData.position,
-                        personName: nodeData.personName,
+                        members: nodeData.members || [{ position: nodeData.position || '', name: nodeData.personName || '' }],
                         parentId: nodeData.parentId,
                         x: nodeData.x,
                         y: nodeData.y
@@ -517,9 +546,11 @@ class OrgChartApp {
                     this.renderNode(node);
                 });
 
-                this.updateConnections();
-                this.saveToLocalStorage();
-                alert('데이터를 성공적으로 불러왔습니다.');
+                setTimeout(() => {
+                    this.updateConnections();
+                    this.saveToLocalStorage();
+                    alert('데이터를 성공적으로 불러왔습니다.');
+                }, 100);
             } catch (err) {
                 alert('파일을 불러오는데 실패했습니다. JSON 형식을 확인해주세요.');
                 console.error(err);
@@ -575,22 +606,37 @@ class OrgChartApp {
             throw new Error(`필수 컬럼이 없습니다: ${missingColumns.join(', ')}`);
         }
 
-        // Parse data rows
-        const orgData = [];
+        // Parse data rows and group by department code
+        const deptMap = new Map();
         for (let i = 1; i < lines.length; i++) {
             const values = this.parseCsvLine(lines[i]);
             if (values.length >= headers.length) {
-                orgData.push({
-                    code: values[headerMap['부서코드']].trim(),
-                    deptName: values[headerMap['부서명']].trim(),
-                    parentCode: values[headerMap['상위부서코드']].trim(),
-                    position: values[headerMap['보직']].trim(),
-                    personName: values[headerMap['성명']].trim()
-                });
+                const code = values[headerMap['부서코드']].trim();
+                const deptName = values[headerMap['부서명']].trim();
+                const parentCode = values[headerMap['상위부서코드']].trim();
+                const position = values[headerMap['보직']].trim();
+                const personName = values[headerMap['성명']].trim();
+
+                if (!deptMap.has(code)) {
+                    deptMap.set(code, {
+                        code: code,
+                        deptName: deptName,
+                        parentCode: parentCode,
+                        members: []
+                    });
+                }
+
+                // Add member to department
+                if (position || personName) {
+                    deptMap.get(code).members.push({
+                        position: position,
+                        name: personName
+                    });
+                }
             }
         }
 
-        if (orgData.length === 0) {
+        if (deptMap.size === 0) {
             throw new Error('CSV 파일에 데이터가 없습니다.');
         }
 
@@ -603,20 +649,19 @@ class OrgChartApp {
         const codeToNodeId = new Map();
 
         // First pass: create all nodes without parent relationships
-        orgData.forEach(row => {
+        deptMap.forEach((dept, code) => {
             const nodeId = `node-${this.nextId++}`;
-            codeToNodeId.set(row.code, nodeId);
+            codeToNodeId.set(code, nodeId);
 
             const node = {
                 id: nodeId,
-                deptName: row.deptName,
-                position: row.position,
-                personName: row.personName,
+                deptName: dept.deptName,
+                members: dept.members,
                 parentId: null,
                 x: 100,
                 y: 100,
-                _code: row.code,
-                _parentCode: row.parentCode
+                _code: code,
+                _parentCode: dept.parentCode
             };
             this.nodes.set(nodeId, node);
         });
@@ -636,9 +681,11 @@ class OrgChartApp {
             this.renderNode(node);
         });
 
-        // Auto-layout the chart
-        this.autoLayout();
-        this.saveToLocalStorage();
+        // Auto-layout the chart and update connections after DOM is ready
+        setTimeout(() => {
+            this.autoLayout();
+            this.saveToLocalStorage();
+        }, 100);
     }
 
     parseCsvLine(line) {
