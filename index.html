@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>조직도 생성기</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <header class="toolbar">
+            <h1>조직도 생성기</h1>
+            <div class="toolbar-actions">
+                <button id="addRootBtn" class="btn btn-primary">최상위 부서 추가</button>
+                <button id="autoLayoutBtn" class="btn btn-secondary">자동 배치</button>
+                <button id="exportBtn" class="btn btn-secondary">이미지 저장</button>
+                <button id="saveDataBtn" class="btn btn-secondary">데이터 저장</button>
+                <button id="loadDataBtn" class="btn btn-secondary">데이터 불러오기</button>
+            </div>
+        </header>
+
+        <main class="canvas-container">
+            <svg id="connections"></svg>
+            <div id="orgChart"></div>
+        </main>
+
+        <!-- 노드 편집 모달 -->
+        <div id="nodeModal" class="modal hidden">
+            <div class="modal-content">
+                <h2 id="modalTitle">부서 정보 편집</h2>
+                <form id="nodeForm">
+                    <div class="form-group">
+                        <label for="deptName">부서명</label>
+                        <input type="text" id="deptName" required placeholder="예: 기획실">
+                    </div>
+                    <div class="form-group">
+                        <label for="position">보직</label>
+                        <input type="text" id="position" placeholder="예: 실장">
+                    </div>
+                    <div class="form-group">
+                        <label for="personName">성명</label>
+                        <input type="text" id="personName" placeholder="예: 홍길동">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">저장</button>
+                        <button type="button" id="cancelBtn" class="btn btn-secondary">취소</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 컨텍스트 메뉴 -->
+        <div id="contextMenu" class="context-menu hidden">
+            <div class="menu-item" data-action="edit">편집</div>
+            <div class="menu-item" data-action="addChild">하위 부서 추가</div>
+            <div class="menu-item" data-action="delete">삭제</div>
+        </div>
+    </div>
+
+    <input type="file" id="fileInput" accept=".json" style="display: none;">
+
+    <script src="app.js"></script>
+</body>
+</html>
