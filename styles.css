@@ -91,8 +91,8 @@ body {
     position: relative;
     width: 100%;
     height: 100%;
-    min-width: 3000px;
-    min-height: 2000px;
+    min-width: 5000px;
+    min-height: 4000px;
 }
 
 /* Org Node */
@@ -102,6 +102,7 @@ body {
     border: 2px solid #3498db;
     border-radius: 8px;
     min-width: 150px;
+    max-width: 300px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     cursor: move;
     user-select: none;
@@ -135,19 +136,36 @@ body {
 }
 
 .node-body {
-    padding: 10px 15px;
-    text-align: center;
+    padding: 8px;
 }
 
-.node-position {
-    font-size: 12px;
+/* Member Items */
+.member-item {
+    padding: 6px 10px;
+    border-bottom: 1px solid #ecf0f1;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 13px;
+}
+
+.member-item:last-child {
+    border-bottom: none;
+}
+
+.member-item.empty {
+    color: #95a5a6;
+    font-style: italic;
+    justify-content: center;
+}
+
+.member-position {
+    font-weight: 600;
     color: #7f8c8d;
-    margin-bottom: 5px;
+    min-width: 50px;
 }
 
-.node-name {
-    font-size: 14px;
-    font-weight: 500;
+.member-name {
     color: #2c3e50;
 }
 
@@ -214,6 +232,87 @@ body {
     margin-top: 20px;
 }
 
+/* Modal - Members List */
+.members-list {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+    background: #fafafa;
+}
+
+.members-empty {
+    padding: 20px;
+    text-align: center;
+    color: #95a5a6;
+    font-size: 13px;
+}
+
+.member-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid #eee;
+    background: white;
+}
+
+.member-list-item:last-child {
+    border-bottom: none;
+}
+
+.member-info {
+    font-size: 14px;
+    color: #2c3e50;
+}
+
+.member-info strong {
+    color: #7f8c8d;
+    margin-right: 8px;
+}
+
+.btn-remove {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    transition: background 0.2s;
+}
+
+.btn-remove:hover {
+    background: #c0392b;
+}
+
+.member-add-form {
+    display: flex;
+    gap: 5px;
+}
+
+.member-add-form input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 13px;
+}
+
+.member-add-form input:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.btn-small {
+    padding: 8px 12px;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
 /* Context Menu */
 .context-menu {
     position: fixed;
@@ -269,5 +368,86 @@ body {
     .modal-content {
         min-width: 90%;
         margin: 0 20px;
+    }
+}
+
+/* Print Styles - A3 Landscape */
+@media print {
+    @page {
+        size: A3 landscape;
+        margin: 10mm;
+    }
+
+    body {
+        background: white;
+    }
+
+    /* Hide toolbar and interactive elements */
+    .toolbar,
+    .modal,
+    .context-menu {
+        display: none !important;
+    }
+
+    /* Remove grid background */
+    .canvas-container {
+        background: white !important;
+        overflow: visible !important;
+    }
+
+    /* Adjust for print */
+    #app {
+        height: auto;
+    }
+
+    .canvas-container {
+        width: 100%;
+        height: auto;
+        position: relative;
+    }
+
+    #orgChart {
+        position: relative;
+        width: fit-content;
+        height: fit-content;
+        min-width: unset;
+        min-height: unset;
+    }
+
+    /* Node styles for print */
+    .org-node {
+        box-shadow: none !important;
+        border: 1.5px solid #333 !important;
+        page-break-inside: avoid;
+        cursor: default;
+    }
+
+    .org-node.selected {
+        border-color: #333 !important;
+        box-shadow: none !important;
+    }
+
+    .node-header {
+        background: #e0e0e0 !important;
+        color: #000 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .member-item {
+        border-bottom: 1px solid #ccc;
+    }
+
+    /* Connection lines for print */
+    .connection-line {
+        stroke: #000 !important;
+        stroke-width: 1.5 !important;
+    }
+
+    #connections {
+        position: absolute;
+        top: 0;
+        left: 0;
+        pointer-events: none;
     }
 }

@@ -33,14 +33,19 @@
                         <label for="deptName">부서명</label>
                         <input type="text" id="deptName" required placeholder="예: 기획실">
                     </div>
+
                     <div class="form-group">
-                        <label for="position">보직</label>
-                        <input type="text" id="position" placeholder="예: 실장">
+                        <label>직원 목록</label>
+                        <div id="membersList" class="members-list">
+                            <!-- 직원 목록이 동적으로 추가됨 -->
+                        </div>
+                        <div class="member-add-form">
+                            <input type="text" id="memberPosition" placeholder="보직 (예: 과장)">
+                            <input type="text" id="memberName" placeholder="성명 (예: 홍길동)">
+                            <button type="button" id="addMemberBtn" class="btn btn-small">+ 추가</button>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="personName">성명</label>
-                        <input type="text" id="personName" placeholder="예: 홍길동">
-                    </div>
+
                     <div class="form-actions">
                         <button type="submit" class="btn btn-primary">저장</button>
                         <button type="button" id="cancelBtn" class="btn btn-secondary">취소</button>
@@ -59,6 +64,7 @@
 
     <input type="file" id="fileInput" accept=".json" style="display: none;">
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

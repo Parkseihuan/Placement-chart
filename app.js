@@ -6,6 +6,7 @@ class OrgChartApp {
         this.draggedNode = null;
         this.dragOffset = { x: 0, y: 0 };
         this.nextId = 1;
+        this.currentMembers = []; // 모달에서 현재 편집 중인 직원 목록
 
         this.initElements();
         this.initEventListeners();
@@ -36,6 +37,7 @@ class OrgChartApp {
         // Modal events
         this.nodeForm.addEventListener('submit', (e) => this.handleFormSubmit(e));
         document.getElementById('cancelBtn').addEventListener('click', () => this.hideModal());
+        document.getElementById('addMemberBtn').addEventListener('click', () => this.addMember());
 
         // Context menu
         this.contextMenu.addEventListener('click', (e) => this.handleContextMenuClick(e));
@@ -56,8 +58,7 @@ class OrgChartApp {
         const node = {
             id,
             deptName: data.deptName || '새 부서',
-            position: data.position || '',
-            personName: data.personName || '',
+            members: data.members || [], // 배열로 여러 직원 관리
             parentId: data.parentId || null,
             x: data.x || 100,
             y: data.y || 100
@@ -78,11 +79,23 @@ class OrgChartApp {
         element.style.left = `${node.x}px`;
         element.style.top = `${node.y}px`;
 
+        // 여러 직원 목록 생성
+        let membersHtml = '';
+        if (node.members && node.members.length > 0) {
+            membersHtml = node.members.map(member => `
+                <div class="member-item">
+                    <span class="member-position">${this.escapeHtml(member.position)}</span>
+                    <span class="member-name">${this.escapeHtml(member.name)}</span>
+                </div>
+            `).join('');
+        } else {
+            membersHtml = '<div class="member-item empty">직원 없음</div>';
+        }
+
         element.innerHTML = `
             <div class="node-header">${this.escapeHtml(node.deptName)}</div>
             <div class="node-body">
-                <div class="node-position">${this.escapeHtml(node.position)}</div>
-                <div class="node-name">${this.escapeHtml(node.personName)}</div>
+                ${membersHtml}
             </div>
         `;
 
@@ -97,9 +110,23 @@ class OrgChartApp {
         const element = document.getElementById(node.id);
         if (!element) return;
 
+        // 헤더 업데이트
         element.querySelector('.node-header').textContent = node.deptName;
-        element.querySelector('.node-position').textContent = node.position;
-        element.querySelector('.node-name').textContent = node.personName;
+
+        // 멤버 목록 업데이트
+        const nodeBody = element.querySelector('.node-body');
+        let membersHtml = '';
+        if (node.members && node.members.length > 0) {
+            membersHtml = node.members.map(member => `
+                <div class="member-item">
+                    <span class="member-position">${this.escapeHtml(member.position)}</span>
+                    <span class="member-name">${this.escapeHtml(member.name)}</span>
+                </div>
+            `).join('');
+        } else {
+            membersHtml = '<div class="member-item empty">직원 없음</div>';
+        }
+        nodeBody.innerHTML = membersHtml;
     }
 
     deleteNode(nodeId) {
@@ -242,6 +269,8 @@ class OrgChartApp {
         this.nodeForm.reset();
         this.nodeForm.dataset.mode = 'add';
         this.nodeForm.dataset.parentId = parentId || '';
+        this.currentMembers = [];
+        this.renderMembersList();
         this.nodeModal.classList.remove('hidden');
         document.getElementById('deptName').focus();
     }
@@ -252,8 +281,10 @@ class OrgChartApp {
 
         this.modalTitle.textContent = '부서 정보 편집';
         document.getElementById('deptName').value = node.deptName;
-        document.getElementById('position').value = node.position;
-        document.getElementById('personName').value = node.personName;
+
+        // 기존 멤버 목록 로드
+        this.currentMembers = node.members ? [...node.members] : [];
+        this.renderMembersList();
 
         this.nodeForm.dataset.mode = 'edit';
         this.nodeForm.dataset.nodeId = nodeId;
@@ -264,6 +295,52 @@ class OrgChartApp {
     hideModal() {
         this.nodeModal.classList.add('hidden');
         this.nodeForm.reset();
+        this.currentMembers = [];
+        this.renderMembersList();
+    }
+
+    // Member Management
+    addMember() {
+        const position = document.getElementById('memberPosition').value.trim();
+        const name = document.getElementById('memberName').value.trim();
+
+        if (!position && !name) {
+            alert('보직 또는 성명을 입력해주세요.');
+            return;
+        }
+
+        this.currentMembers.push({ position, name });
+        this.renderMembersList();
+
+        // Clear inputs
+        document.getElementById('memberPosition').value = '';
+        document.getElementById('memberName').value = '';
+        document.getElementById('memberPosition').focus();
+    }
+
+    removeMember(index) {
+        this.currentMembers.splice(index, 1);
+        this.renderMembersList();
+    }
+
+    renderMembersList() {
+        const membersList = document.getElementById('membersList');
+        if (!membersList) return;
+
+        if (this.currentMembers.length === 0) {
+            membersList.innerHTML = '<div class="members-empty">직원이 없습니다. 아래에서 추가해주세요.</div>';
+            return;
+        }
+
+        membersList.innerHTML = this.currentMembers.map((member, index) => `
+            <div class="member-list-item">
+                <span class="member-info">
+                    <strong>${this.escapeHtml(member.position)}</strong>
+                    ${this.escapeHtml(member.name)}
+                </span>
+                <button type="button" class="btn-remove" onclick="window.orgChartApp.removeMember(${index})" title="삭제">×</button>
+            </div>
+        `).join('');
     }
 
     handleFormSubmit(e) {
@@ -271,8 +348,7 @@ class OrgChartApp {
 
         const data = {
             deptName: document.getElementById('deptName').value.trim(),
-            position: document.getElementById('position').value.trim(),
-            personName: document.getElementById('personName').value.trim()
+            members: [...this.currentMembers] // 현재 편집 중인 직원 목록 사용
         };
 
         const mode = this.nodeForm.dataset.mode;
@@ -303,8 +379,7 @@ class OrgChartApp {
             const node = this.nodes.get(nodeId);
             if (node) {
                 node.deptName = data.deptName;
-                node.position = data.position;
-                node.personName = data.personName;
+                node.members = data.members;
                 this.updateNodeElement(node);
                 this.saveToLocalStorage();
             }
@@ -448,11 +523,16 @@ class OrgChartApp {
 
             // Recreate nodes
             data.nodes.forEach(nodeData => {
+                // 기존 데이터 호환성: position/personName을 members 배열로 변환
+                let members = nodeData.members || [];
+                if (!members.length && (nodeData.position || nodeData.personName)) {
+                    members = [{ position: nodeData.position || '', name: nodeData.personName || '' }];
+                }
+
                 const node = {
                     id: nodeData.id,
                     deptName: nodeData.deptName,
-                    position: nodeData.position,
-                    personName: nodeData.personName,
+                    members: members,
                     parentId: nodeData.parentId,
                     x: nodeData.x,
                     y: nodeData.y
@@ -501,11 +581,16 @@ class OrgChartApp {
 
                 // Recreate nodes
                 data.nodes.forEach(nodeData => {
+                    // 기존 데이터 호환성: position/personName을 members 배열로 변환
+                    let members = nodeData.members || [];
+                    if (!members.length && (nodeData.position || nodeData.personName)) {
+                        members = [{ position: nodeData.position || '', name: nodeData.personName || '' }];
+                    }
+
                     const node = {
                         id: nodeData.id,
                         deptName: nodeData.deptName,
-                        position: nodeData.position,
-                        personName: nodeData.personName,
+                        members: members,
                         parentId: nodeData.parentId,
                         x: nodeData.x,
                         y: nodeData.y
@@ -528,12 +613,44 @@ class OrgChartApp {
         e.target.value = '';
     }
 
-    exportAsImage() {
-        // Using html2canvas would be ideal, but for simplicity we'll use a basic approach
-        alert('이미지 저장 기능을 사용하려면 브라우저의 스크린샷 기능을 이용하거나\n' +
-              'html2canvas 라이브러리를 추가해주세요.\n\n' +
-              'Windows: Win + Shift + S\n' +
-              'Mac: Cmd + Shift + 4');
+    async exportAsImage() {
+        if (typeof html2canvas === 'undefined') {
+            alert('html2canvas 라이브러리를 불러오는 중 오류가 발생했습니다.');
+            return;
+        }
+
+        try {
+            // 임시로 선택 해제
+            const wasSelected = this.selectedNode;
+            this.deselectAll();
+
+            // 캔버스 생성 (고해상도)
+            const canvas = await html2canvas(this.orgChart, {
+                backgroundColor: '#ffffff',
+                scale: 2, // 고해상도
+                logging: false,
+                useCORS: true
+            });
+
+            // 선택 복구
+            if (wasSelected) {
+                this.selectNode(wasSelected);
+            }
+
+            // PNG로 변환
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `조직도_${new Date().toISOString().slice(0, 10)}.png`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+
+        } catch (error) {
+            console.error('이미지 저장 오류:', error);
+            alert('이미지 저장 중 오류가 발생했습니다.\n브라우저의 인쇄 기능(Ctrl+P)을 이용하거나\n스크린샷을 활용해주세요.');
+        }
     }
 
     // Utility
