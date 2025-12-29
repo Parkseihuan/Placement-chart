@@ -169,6 +169,63 @@ body {
     color: #2c3e50;
 }
 
+/* Connection Anchors (연결점) */
+.connection-anchor {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: #3498db;
+    border: 2px solid white;
+    border-radius: 50%;
+    cursor: crosshair;
+    z-index: 20;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.org-node:hover .connection-anchor {
+    opacity: 1;
+}
+
+.connection-anchor:hover {
+    background: #e74c3c;
+    transform: scale(1.3);
+}
+
+.connection-anchor.top {
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.connection-anchor.bottom {
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.connection-anchor.left {
+    left: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.connection-anchor.right {
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.connection-anchor.top:hover,
+.connection-anchor.bottom:hover {
+    transform: translateX(-50%) scale(1.3);
+}
+
+.connection-anchor.left:hover,
+.connection-anchor.right:hover {
+    transform: translateY(-50%) scale(1.3);
+}
+
 /* Modal */
 .modal {
     position: fixed;

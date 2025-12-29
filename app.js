@@ -8,6 +8,15 @@ class OrgChartApp {
         this.nextId = 1;
         this.currentMembers = []; // 모달에서 현재 편집 중인 직원 목록
 
+        // 캔버스 패닝(이동) 관련
+        this.isPanning = false;
+        this.panStart = { x: 0, y: 0 };
+
+        // 연결선 드래그 관련
+        this.isDraggingConnection = false;
+        this.connectionStart = null;
+        this.tempLine = null;
+
         this.initElements();
         this.initEventListeners();
         this.loadFromLocalStorage();
@@ -16,6 +25,7 @@ class OrgChartApp {
     initElements() {
         this.orgChart = document.getElementById('orgChart');
         this.connections = document.getElementById('connections');
+        this.canvasContainer = document.querySelector('.canvas-container');
         this.nodeModal = document.getElementById('nodeModal');
         this.nodeForm = document.getElementById('nodeForm');
         this.contextMenu = document.getElementById('contextMenu');
@@ -50,6 +60,9 @@ class OrgChartApp {
 
         // Prevent context menu on canvas
         this.orgChart.addEventListener('contextmenu', (e) => e.preventDefault());
+
+        // Canvas panning (화면 이동)
+        this.canvasContainer.addEventListener('mousedown', (e) => this.handleCanvasMouseDown(e));
     }
 
     // Node Management
@@ -97,11 +110,21 @@ class OrgChartApp {
             <div class="node-body">
                 ${membersHtml}
             </div>
+            <div class="connection-anchor top" data-direction="top"></div>
+            <div class="connection-anchor bottom" data-direction="bottom"></div>
+            <div class="connection-anchor left" data-direction="left"></div>
+            <div class="connection-anchor right" data-direction="right"></div>
         `;
 
         element.addEventListener('mousedown', (e) => this.handleNodeMouseDown(e, node.id));
         element.addEventListener('contextmenu', (e) => this.showContextMenu(e, node.id));
         element.addEventListener('dblclick', () => this.editNode(node.id));
+
+        // 연결점 이벤트 리스너
+        const anchors = element.querySelectorAll('.connection-anchor');
+        anchors.forEach(anchor => {
+            anchor.addEventListener('mousedown', (e) => this.handleAnchorMouseDown(e, node.id));
+        });
 
         this.orgChart.appendChild(element);
     }
@@ -127,6 +150,23 @@ class OrgChartApp {
             membersHtml = '<div class="member-item empty">직원 없음</div>';
         }
         nodeBody.innerHTML = membersHtml;
+
+        // 연결점이 없으면 추가 (업데이트 시 사라질 수 있음)
+        if (!element.querySelector('.connection-anchor')) {
+            const anchorsHtml = `
+                <div class="connection-anchor top" data-direction="top"></div>
+                <div class="connection-anchor bottom" data-direction="bottom"></div>
+                <div class="connection-anchor left" data-direction="left"></div>
+                <div class="connection-anchor right" data-direction="right"></div>
+            `;
+            element.insertAdjacentHTML('beforeend', anchorsHtml);
+
+            // 연결점 이벤트 리스너 재등록
+            const anchors = element.querySelectorAll('.connection-anchor');
+            anchors.forEach(anchor => {
+                anchor.addEventListener('mousedown', (e) => this.handleAnchorMouseDown(e, node.id));
+            });
+        }
     }
 
     deleteNode(nodeId) {
@@ -154,10 +194,52 @@ class OrgChartApp {
         return children;
     }
 
+    // Connection Anchor Drag (연결점 드래그)
+    handleAnchorMouseDown(e, nodeId) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        this.isDraggingConnection = true;
+        this.connectionStart = {
+            nodeId: nodeId,
+            x: e.clientX + this.canvasContainer.scrollLeft,
+            y: e.clientY + this.canvasContainer.scrollTop
+        };
+
+        // 임시 연결선 생성
+        this.tempLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        this.tempLine.setAttribute('stroke', '#e74c3c');
+        this.tempLine.setAttribute('stroke-width', '2');
+        this.tempLine.setAttribute('stroke-dasharray', '5,5');
+        this.tempLine.setAttribute('x1', this.connectionStart.x);
+        this.tempLine.setAttribute('y1', this.connectionStart.y);
+        this.tempLine.setAttribute('x2', this.connectionStart.x);
+        this.tempLine.setAttribute('y2', this.connectionStart.y);
+        this.connections.appendChild(this.tempLine);
+    }
+
+    // Canvas Panning (화면 이동)
+    handleCanvasMouseDown(e) {
+        // 노드를 클릭한 경우는 패닝하지 않음
+        if (e.target.closest('.org-node')) return;
+
+        // 좌클릭만 허용
+        if (e.button !== 0) return;
+
+        this.isPanning = true;
+        this.panStart = {
+            x: e.clientX - this.canvasContainer.scrollLeft,
+            y: e.clientY - this.canvasContainer.scrollTop
+        };
+        this.canvasContainer.style.cursor = 'grabbing';
+        e.preventDefault();
+    }
+
     // Drag and Drop
     handleNodeMouseDown(e, nodeId) {
         if (e.button !== 0) return; // Only left click
         e.preventDefault();
+        e.stopPropagation(); // 캔버스 패닝 방지
 
         const node = this.nodes.get(nodeId);
         const element = document.getElementById(nodeId);
@@ -173,6 +255,25 @@ class OrgChartApp {
     }
 
     handleMouseMove(e) {
+        // 연결선 드래그 처리
+        if (this.isDraggingConnection && this.tempLine) {
+            const x = e.clientX + this.canvasContainer.scrollLeft;
+            const y = e.clientY + this.canvasContainer.scrollTop;
+            this.tempLine.setAttribute('x2', x);
+            this.tempLine.setAttribute('y2', y);
+            return;
+        }
+
+        // 캔버스 패닝 처리
+        if (this.isPanning) {
+            const x = e.clientX - this.panStart.x;
+            const y = e.clientY - this.panStart.y;
+            this.canvasContainer.scrollLeft = -x;
+            this.canvasContainer.scrollTop = -y;
+            return;
+        }
+
+        // 노드 드래그 처리
         if (!this.draggedNode) return;
 
         const newX = e.clientX - this.dragOffset.x;
@@ -190,6 +291,41 @@ class OrgChartApp {
     }
 
     handleMouseUp(e) {
+        // 연결선 드래그 종료
+        if (this.isDraggingConnection) {
+            // 임시 선 제거
+            if (this.tempLine) {
+                this.tempLine.remove();
+                this.tempLine = null;
+            }
+
+            // 타겟 노드 찾기
+            const target = e.target.closest('.org-node');
+            if (target && target.id !== this.connectionStart.nodeId) {
+                const targetNodeId = target.id;
+                const sourceNodeId = this.connectionStart.nodeId;
+
+                // 연결 생성: 타겟 노드의 부모를 소스 노드로 설정
+                const targetNode = this.nodes.get(targetNodeId);
+                if (targetNode) {
+                    targetNode.parentId = sourceNodeId;
+                    this.updateConnections();
+                    this.saveToLocalStorage();
+                }
+            }
+
+            this.isDraggingConnection = false;
+            this.connectionStart = null;
+            return;
+        }
+
+        // 캔버스 패닝 종료
+        if (this.isPanning) {
+            this.isPanning = false;
+            this.canvasContainer.style.cursor = 'default';
+        }
+
+        // 노드 드래그 종료
         if (!this.draggedNode) return;
 
         const element = document.getElementById(this.draggedNode.id);
@@ -269,6 +405,30 @@ class OrgChartApp {
         this.nodeForm.reset();
         this.nodeForm.dataset.mode = 'add';
         this.nodeForm.dataset.parentId = parentId || '';
+        this.currentMembers = [];
+        this.renderMembersList();
+        this.nodeModal.classList.remove('hidden');
+        document.getElementById('deptName').focus();
+    }
+
+    showAddChildModal(nodeId) {
+        this.modalTitle.textContent = '하위 부서 추가';
+        this.nodeForm.reset();
+        this.nodeForm.dataset.mode = 'add-child';
+        this.nodeForm.dataset.parentNodeId = nodeId;
+        this.currentMembers = [];
+        this.renderMembersList();
+        this.nodeModal.classList.remove('hidden');
+        document.getElementById('deptName').focus();
+    }
+
+    showAddSiblingModal(nodeId) {
+        const node = this.nodes.get(nodeId);
+        this.modalTitle.textContent = '형제 부서 추가';
+        this.nodeForm.reset();
+        this.nodeForm.dataset.mode = 'add-sibling';
+        this.nodeForm.dataset.siblingNodeId = nodeId;
+        this.nodeForm.dataset.parentId = node.parentId || '';
         this.currentMembers = [];
         this.renderMembersList();
         this.nodeModal.classList.remove('hidden');
@@ -374,6 +534,51 @@ class OrgChartApp {
             data.y = y;
 
             this.createNode(data);
+        } else if (mode === 'add-child') {
+            // 하위 부서 추가: 부모의 바로 아래 중앙에 배치
+            const parentId = this.nodeForm.dataset.parentNodeId;
+            const parent = this.nodes.get(parentId);
+            const siblings = this.getChildren(parentId);
+
+            // 부모 아래 중앙에 배치
+            let x = parent.x;
+            let y = parent.y + 150;
+
+            // 이미 자식이 있으면 옆으로 배치
+            if (siblings.length > 0) {
+                x = parent.x + siblings.length * 200;
+            }
+
+            data.parentId = parentId;
+            data.x = x;
+            data.y = y;
+
+            this.createNode(data);
+        } else if (mode === 'add-sibling') {
+            // 형제 부서 추가: 같은 레벨 옆에 배치
+            const siblingId = this.nodeForm.dataset.siblingNodeId;
+            const sibling = this.nodes.get(siblingId);
+            const parentId = sibling.parentId;
+
+            let x, y;
+            if (parentId) {
+                // 부모가 있는 경우
+                const parent = this.nodes.get(parentId);
+                const siblings = this.getChildren(parentId);
+                x = parent.x + siblings.length * 200;
+                y = parent.y + 150;
+            } else {
+                // 최상위 노드인 경우
+                const rootNodes = Array.from(this.nodes.values()).filter(n => !n.parentId);
+                x = sibling.x + 250;
+                y = sibling.y;
+            }
+
+            data.parentId = parentId;
+            data.x = x;
+            data.y = y;
+
+            this.createNode(data);
         } else if (mode === 'edit') {
             const nodeId = this.nodeForm.dataset.nodeId;
             const node = this.nodes.get(nodeId);
@@ -413,7 +618,10 @@ class OrgChartApp {
                 this.editNode(nodeId);
                 break;
             case 'addChild':
-                this.showAddNodeModal(nodeId);
+                this.showAddChildModal(nodeId);
+                break;
+            case 'addSibling':
+                this.showAddSiblingModal(nodeId);
                 break;
             case 'delete':
                 if (confirm('이 부서와 모든 하위 부서를 삭제하시겠습니까?')) {
