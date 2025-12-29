@@ -17,9 +17,15 @@ class OrgChartApp {
         this.connectionStart = null;
         this.tempLine = null;
 
+        // Undo/Redo 관련
+        this.undoStack = [];
+        this.redoStack = [];
+        this.maxHistorySize = 50; // 최대 50개 히스토리 유지
+
         this.initElements();
         this.initEventListeners();
         this.loadFromLocalStorage();
+        this.saveState(); // 초기 상태 저장
     }
 
     initElements() {
@@ -35,6 +41,8 @@ class OrgChartApp {
 
     initEventListeners() {
         // Toolbar buttons
+        document.getElementById('undoBtn').addEventListener('click', () => this.undo());
+        document.getElementById('redoBtn').addEventListener('click', () => this.redo());
         document.getElementById('addRootBtn').addEventListener('click', () => this.showAddNodeModal());
         document.getElementById('autoLayoutBtn').addEventListener('click', () => this.autoLayout());
         document.getElementById('exportBtn').addEventListener('click', () => this.exportAsImage());
@@ -80,6 +88,7 @@ class OrgChartApp {
         this.nodes.set(id, node);
         this.renderNode(node);
         this.updateConnections();
+        this.saveState();
         this.saveToLocalStorage();
 
         return node;
@@ -93,23 +102,21 @@ class OrgChartApp {
         element.style.top = `${node.y}px`;
 
         // 여러 직원 목록 생성
-        let membersHtml = '';
+        let bodyHtml = '';
         if (node.members && node.members.length > 0) {
-            membersHtml = node.members.map(member => `
+            const membersHtml = node.members.map(member => `
                 <div class="member-item">
                     <span class="member-position">${this.escapeHtml(member.position)}</span>
                     <span class="member-name">${this.escapeHtml(member.name)}</span>
                 </div>
             `).join('');
-        } else {
-            membersHtml = '<div class="member-item empty">직원 없음</div>';
+            bodyHtml = `<div class="node-body">${membersHtml}</div>`;
         }
+        // 직원이 없으면 node-body를 아예 렌더링하지 않음
 
         element.innerHTML = `
             <div class="node-header">${this.escapeHtml(node.deptName)}</div>
-            <div class="node-body">
-                ${membersHtml}
-            </div>
+            ${bodyHtml}
             <div class="connection-anchor top" data-direction="top"></div>
             <div class="connection-anchor bottom" data-direction="bottom"></div>
             <div class="connection-anchor left" data-direction="left"></div>
@@ -124,6 +131,11 @@ class OrgChartApp {
         const anchors = element.querySelectorAll('.connection-anchor');
         anchors.forEach(anchor => {
             anchor.addEventListener('mousedown', (e) => this.handleAnchorMouseDown(e, node.id));
+            // 연결점에서 우클릭 메뉴 방지
+            anchor.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
         });
 
         this.orgChart.appendChild(element);
@@ -137,19 +149,29 @@ class OrgChartApp {
         element.querySelector('.node-header').textContent = node.deptName;
 
         // 멤버 목록 업데이트
-        const nodeBody = element.querySelector('.node-body');
-        let membersHtml = '';
+        let nodeBody = element.querySelector('.node-body');
+
         if (node.members && node.members.length > 0) {
-            membersHtml = node.members.map(member => `
+            const membersHtml = node.members.map(member => `
                 <div class="member-item">
                     <span class="member-position">${this.escapeHtml(member.position)}</span>
                     <span class="member-name">${this.escapeHtml(member.name)}</span>
                 </div>
             `).join('');
+
+            // node-body가 없으면 생성
+            if (!nodeBody) {
+                const header = element.querySelector('.node-header');
+                header.insertAdjacentHTML('afterend', `<div class="node-body">${membersHtml}</div>`);
+            } else {
+                nodeBody.innerHTML = membersHtml;
+            }
         } else {
-            membersHtml = '<div class="member-item empty">직원 없음</div>';
+            // 직원이 없으면 node-body 제거
+            if (nodeBody) {
+                nodeBody.remove();
+            }
         }
-        nodeBody.innerHTML = membersHtml;
 
         // 연결점이 없으면 추가 (업데이트 시 사라질 수 있음)
         if (!element.querySelector('.connection-anchor')) {
@@ -165,6 +187,11 @@ class OrgChartApp {
             const anchors = element.querySelectorAll('.connection-anchor');
             anchors.forEach(anchor => {
                 anchor.addEventListener('mousedown', (e) => this.handleAnchorMouseDown(e, node.id));
+                // 연결점에서 우클릭 메뉴 방지
+                anchor.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
             });
         }
     }
@@ -181,6 +208,7 @@ class OrgChartApp {
         // Remove from data
         this.nodes.delete(nodeId);
         this.updateConnections();
+        this.saveState();
         this.saveToLocalStorage();
     }
 
@@ -310,6 +338,7 @@ class OrgChartApp {
                 if (targetNode) {
                     targetNode.parentId = sourceNodeId;
                     this.updateConnections();
+                    this.saveState();
                     this.saveToLocalStorage();
                 }
             }
@@ -332,6 +361,7 @@ class OrgChartApp {
         element.classList.remove('dragging');
 
         this.draggedNode = null;
+        this.saveState();
         this.saveToLocalStorage();
     }
 
@@ -586,6 +616,7 @@ class OrgChartApp {
                 node.deptName = data.deptName;
                 node.members = data.members;
                 this.updateNodeElement(node);
+                this.saveState();
                 this.saveToLocalStorage();
             }
         }
@@ -596,6 +627,8 @@ class OrgChartApp {
     // Context Menu
     showContextMenu(e, nodeId) {
         e.preventDefault();
+        e.stopPropagation();
+
         this.selectNode(nodeId);
         this.contextMenu.dataset.nodeId = nodeId;
         this.contextMenu.style.left = `${e.clientX}px`;
@@ -651,6 +684,19 @@ class OrgChartApp {
     }
 
     handleKeyDown(e) {
+        // Undo/Redo 단축키
+        if (e.ctrlKey && e.key === 'z') {
+            e.preventDefault();
+            this.undo();
+            return;
+        }
+
+        if (e.ctrlKey && e.key === 'y') {
+            e.preventDefault();
+            this.redo();
+            return;
+        }
+
         if (e.key === 'Escape') {
             this.hideModal();
             this.hideContextMenu();
@@ -663,6 +709,88 @@ class OrgChartApp {
                     this.deleteNode(this.selectedNode);
                 }
             }
+        }
+    }
+
+    // Undo/Redo Functions
+    saveState() {
+        const state = {
+            nodes: Array.from(this.nodes.values()).map(node => ({...node})),
+            nextId: this.nextId
+        };
+
+        // 새 상태를 저장할 때 redoStack 초기화
+        this.redoStack = [];
+
+        // undoStack에 현재 상태 추가
+        this.undoStack.push(JSON.parse(JSON.stringify(state)));
+
+        // 최대 크기 유지
+        if (this.undoStack.length > this.maxHistorySize) {
+            this.undoStack.shift();
+        }
+
+        this.updateUndoRedoButtons();
+    }
+
+    undo() {
+        if (this.undoStack.length <= 1) {
+            console.log('더 이상 되돌릴 수 없습니다.');
+            return;
+        }
+
+        // 현재 상태를 redoStack에 저장
+        const currentState = this.undoStack.pop();
+        this.redoStack.push(currentState);
+
+        // 이전 상태 복원
+        const previousState = this.undoStack[this.undoStack.length - 1];
+        this.restoreState(previousState);
+
+        this.updateUndoRedoButtons();
+    }
+
+    redo() {
+        if (this.redoStack.length === 0) {
+            console.log('더 이상 다시 실행할 수 없습니다.');
+            return;
+        }
+
+        // redoStack에서 상태 가져오기
+        const nextState = this.redoStack.pop();
+        this.undoStack.push(nextState);
+
+        this.restoreState(nextState);
+        this.updateUndoRedoButtons();
+    }
+
+    restoreState(state) {
+        // 기존 노드 모두 제거
+        this.orgChart.innerHTML = '';
+        this.nodes.clear();
+
+        // 상태 복원
+        this.nextId = state.nextId;
+
+        state.nodes.forEach(nodeData => {
+            const node = {...nodeData};
+            this.nodes.set(node.id, node);
+            this.renderNode(node);
+        });
+
+        this.updateConnections();
+    }
+
+    updateUndoRedoButtons() {
+        const undoBtn = document.getElementById('undoBtn');
+        const redoBtn = document.getElementById('redoBtn');
+
+        if (undoBtn) {
+            undoBtn.disabled = this.undoStack.length <= 1;
+        }
+
+        if (redoBtn) {
+            redoBtn.disabled = this.redoStack.length === 0;
         }
     }
 
@@ -705,6 +833,7 @@ class OrgChartApp {
         });
 
         this.updateConnections();
+        this.saveState();
         this.saveToLocalStorage();
     }
 
