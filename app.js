@@ -22,6 +22,10 @@ class OrgChartApp {
         this.redoStack = [];
         this.maxHistorySize = 50; // 최대 50개 히스토리 유지
 
+        // 헤더 정보
+        this.chartTitle = '용인대학교 교직원 배치표';
+        this.chartDate = '2024. 2. 8. 현재';
+
         this.initElements();
         this.initEventListeners();
         this.loadFromLocalStorage();
@@ -71,6 +75,16 @@ class OrgChartApp {
 
         // Canvas panning (화면 이동)
         this.canvasContainer.addEventListener('mousedown', (e) => this.handleCanvasMouseDown(e));
+
+        // Chart header events
+        document.getElementById('chartTitle').addEventListener('blur', (e) => {
+            this.chartTitle = e.target.textContent;
+            this.saveToLocalStorage();
+        });
+        document.getElementById('chartDate').addEventListener('blur', (e) => {
+            this.chartDate = e.target.textContent;
+            this.saveToLocalStorage();
+        });
     }
 
     // Node Management
@@ -841,7 +855,9 @@ class OrgChartApp {
     saveToLocalStorage() {
         const data = {
             nodes: Array.from(this.nodes.values()),
-            nextId: this.nextId
+            nextId: this.nextId,
+            chartTitle: this.chartTitle,
+            chartDate: this.chartDate
         };
         localStorage.setItem('orgChartData', JSON.stringify(data));
     }
@@ -853,6 +869,16 @@ class OrgChartApp {
         try {
             const data = JSON.parse(saved);
             this.nextId = data.nextId || 1;
+
+            // 헤더 정보 복원
+            if (data.chartTitle) {
+                this.chartTitle = data.chartTitle;
+                document.getElementById('chartTitle').textContent = data.chartTitle;
+            }
+            if (data.chartDate) {
+                this.chartDate = data.chartDate;
+                document.getElementById('chartDate').textContent = data.chartDate;
+            }
 
             // Clear existing
             this.orgChart.innerHTML = '';
@@ -887,7 +913,9 @@ class OrgChartApp {
     saveToFile() {
         const data = {
             nodes: Array.from(this.nodes.values()),
-            nextId: this.nextId
+            nextId: this.nextId,
+            chartTitle: this.chartTitle,
+            chartDate: this.chartDate
         };
 
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -915,6 +943,16 @@ class OrgChartApp {
                 this.nodes.clear();
 
                 this.nextId = data.nextId || 1;
+
+                // 헤더 정보 복원
+                if (data.chartTitle) {
+                    this.chartTitle = data.chartTitle;
+                    document.getElementById('chartTitle').textContent = data.chartTitle;
+                }
+                if (data.chartDate) {
+                    this.chartDate = data.chartDate;
+                    document.getElementById('chartDate').textContent = data.chartDate;
+                }
 
                 // Recreate nodes
                 data.nodes.forEach(nodeData => {
