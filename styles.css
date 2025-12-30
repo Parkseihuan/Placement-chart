@@ -587,6 +587,29 @@ body {
     fill: none;
 }
 
+/* Selection Box (영역 선택) */
+.selection-box {
+    position: absolute;
+    border: 2px dashed #3498db;
+    background: rgba(52, 152, 219, 0.1);
+    pointer-events: none;
+    z-index: 1000;
+}
+
+/* Group Indicator (그룹 표시) */
+.org-node.in-group {
+    box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.4);
+}
+
+.org-node.in-group::before {
+    content: "📌";
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    font-size: 16px;
+    z-index: 20;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .toolbar {

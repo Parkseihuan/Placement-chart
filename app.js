@@ -32,6 +32,14 @@ class OrgChartApp {
         this.draggedHeader = null;
         this.headerDragOffset = { x: 0, y: 0 };
 
+        // 영역 선택 관련
+        this.isSelectionMode = false;
+        this.isSelecting = false;
+        this.selectionStart = null;
+        this.selectionBox = null;
+        this.nodeGroups = []; // 노드 그룹들
+        this.nextGroupId = 1;
+
         this.initElements();
         this.initEventListeners();
         this.loadFromLocalStorage();
@@ -55,6 +63,7 @@ class OrgChartApp {
         document.getElementById('redoBtn').addEventListener('click', () => this.redo());
         document.getElementById('addRootBtn').addEventListener('click', () => this.showAddNodeModal());
         document.getElementById('autoLayoutBtn').addEventListener('click', () => this.autoLayout());
+        document.getElementById('groupSelectionBtn').addEventListener('click', () => this.toggleSelectionMode());
         document.getElementById('exportBtn').addEventListener('click', () => this.exportAsImage());
         document.getElementById('saveDataBtn').addEventListener('click', () => this.saveToFile());
         document.getElementById('loadDataBtn').addEventListener('click', () => this.fileInput.click());
@@ -342,6 +351,24 @@ class OrgChartApp {
         sel.addRange(range);
     }
 
+    // Selection Mode (영역 선택 모드)
+    toggleSelectionMode() {
+        this.isSelectionMode = !this.isSelectionMode;
+        const btn = document.getElementById('groupSelectionBtn');
+
+        if (this.isSelectionMode) {
+            btn.classList.add('btn-primary');
+            btn.classList.remove('btn-secondary');
+            btn.textContent = '영역 선택 중...';
+            this.canvasContainer.style.cursor = 'crosshair';
+        } else {
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-secondary');
+            btn.textContent = '영역 선택';
+            this.canvasContainer.style.cursor = 'default';
+        }
+    }
+
     // Canvas Panning (화면 이동)
     handleCanvasMouseDown(e) {
         // 노드를 클릭한 경우는 패닝하지 않음
@@ -353,6 +380,12 @@ class OrgChartApp {
         // 좌클릭만 허용
         if (e.button !== 0) return;
 
+        // 영역 선택 모드인 경우
+        if (this.isSelectionMode) {
+            this.startSelection(e);
+            return;
+        }
+
         this.isPanning = true;
         this.panStart = {
             x: e.clientX - this.canvasContainer.scrollLeft,
@@ -360,6 +393,137 @@ class OrgChartApp {
         };
         this.canvasContainer.style.cursor = 'grabbing';
         e.preventDefault();
+    }
+
+    // Area Selection (영역 선택)
+    startSelection(e) {
+        this.isSelecting = true;
+        const rect = this.orgChart.getBoundingClientRect();
+
+        this.selectionStart = {
+            x: e.clientX - rect.left + this.canvasContainer.scrollLeft,
+            y: e.clientY - rect.top + this.canvasContainer.scrollTop
+        };
+
+        // 선택 박스 생성
+        this.selectionBox = document.createElement('div');
+        this.selectionBox.className = 'selection-box';
+        this.selectionBox.style.left = `${this.selectionStart.x}px`;
+        this.selectionBox.style.top = `${this.selectionStart.y}px`;
+        this.selectionBox.style.width = '0px';
+        this.selectionBox.style.height = '0px';
+        this.orgChart.appendChild(this.selectionBox);
+    }
+
+    finishSelection() {
+        if (!this.selectionBox) return;
+
+        // 선택 영역 계산
+        const boxRect = {
+            left: parseFloat(this.selectionBox.style.left),
+            top: parseFloat(this.selectionBox.style.top),
+            width: parseFloat(this.selectionBox.style.width),
+            height: parseFloat(this.selectionBox.style.height)
+        };
+        boxRect.right = boxRect.left + boxRect.width;
+        boxRect.bottom = boxRect.top + boxRect.height;
+
+        // 영역 내의 노드들 찾기
+        const selectedNodes = [];
+        this.nodes.forEach(node => {
+            const element = document.getElementById(node.id);
+            if (!element) return;
+
+            const nodeRect = {
+                left: node.x,
+                top: node.y,
+                width: element.offsetWidth,
+                height: element.offsetHeight
+            };
+            nodeRect.right = nodeRect.left + nodeRect.width;
+            nodeRect.bottom = nodeRect.top + nodeRect.height;
+
+            // 겹치는지 확인
+            if (boxRect.left < nodeRect.right &&
+                boxRect.right > nodeRect.left &&
+                boxRect.top < nodeRect.bottom &&
+                boxRect.bottom > nodeRect.top) {
+                selectedNodes.push(node.id);
+            }
+        });
+
+        // 선택 박스 제거
+        this.selectionBox.remove();
+        this.selectionBox = null;
+        this.isSelecting = false;
+
+        // 선택된 노드가 있으면 그룹 생성
+        if (selectedNodes.length >= 2) {
+            this.createGroup(selectedNodes);
+        } else {
+            alert('최소 2개 이상의 노드를 선택해야 그룹을 만들 수 있습니다.');
+        }
+
+        // 선택 모드 종료
+        this.toggleSelectionMode();
+    }
+
+    createGroup(nodeIds) {
+        const groupId = `group-${this.nextGroupId++}`;
+
+        // 그룹 내 노드들의 상대적 위치 계산
+        const nodePositions = nodeIds.map(nodeId => {
+            const node = this.nodes.get(nodeId);
+            return { nodeId, x: node.x, y: node.y };
+        });
+
+        // 기준점 계산 (첫 번째 노드)
+        const baseNode = nodePositions[0];
+        const relativePositions = nodePositions.map(pos => ({
+            nodeId: pos.nodeId,
+            offsetX: pos.x - baseNode.x,
+            offsetY: pos.y - baseNode.y
+        }));
+
+        const group = {
+            id: groupId,
+            nodeIds: nodeIds,
+            relativePositions: relativePositions,
+            baseNodeId: baseNode.nodeId
+        };
+
+        this.nodeGroups.push(group);
+
+        // 노드에 그룹 표시
+        nodeIds.forEach(nodeId => {
+            const element = document.getElementById(nodeId);
+            if (element) {
+                element.classList.add('in-group');
+                element.dataset.groupId = groupId;
+            }
+        });
+
+        this.saveToLocalStorage();
+        alert(`${nodeIds.length}개의 노드로 그룹이 생성되었습니다. 자동 배치 시 간격이 유지됩니다.`);
+    }
+
+    removeGroup(groupId) {
+        const groupIndex = this.nodeGroups.findIndex(g => g.id === groupId);
+        if (groupIndex === -1) return;
+
+        const group = this.nodeGroups[groupIndex];
+
+        // 노드에서 그룹 표시 제거
+        group.nodeIds.forEach(nodeId => {
+            const element = document.getElementById(nodeId);
+            if (element) {
+                element.classList.remove('in-group');
+                delete element.dataset.groupId;
+            }
+        });
+
+        this.nodeGroups.splice(groupIndex, 1);
+        this.saveToLocalStorage();
     }
 
     // Drag and Drop
@@ -382,6 +546,24 @@ class OrgChartApp {
     }
 
     handleMouseMove(e) {
+        // 영역 선택 드래그 처리
+        if (this.isSelecting && this.selectionBox) {
+            const rect = this.orgChart.getBoundingClientRect();
+            const currentX = e.clientX - rect.left + this.canvasContainer.scrollLeft;
+            const currentY = e.clientY - rect.top + this.canvasContainer.scrollTop;
+
+            const left = Math.min(this.selectionStart.x, currentX);
+            const top = Math.min(this.selectionStart.y, currentY);
+            const width = Math.abs(currentX - this.selectionStart.x);
+            const height = Math.abs(currentY - this.selectionStart.y);
+
+            this.selectionBox.style.left = `${left}px`;
+            this.selectionBox.style.top = `${top}px`;
+            this.selectionBox.style.width = `${width}px`;
+            this.selectionBox.style.height = `${height}px`;
+            return;
+        }
+
         // 헤더 드래그 처리
         if (this.draggedHeader) {
             const newX = e.clientX - this.headerDragOffset.x + this.canvasContainer.scrollLeft;
@@ -449,6 +631,12 @@ class OrgChartApp {
     }
 
     handleMouseUp(e) {
+        // 영역 선택 종료
+        if (this.isSelecting && this.selectionBox) {
+            this.finishSelection();
+            return;
+        }
+
         // 헤더 드래그 종료
         if (this.draggedHeader) {
             this.draggedHeader = null;
@@ -862,6 +1050,16 @@ class OrgChartApp {
         this.contextMenu.dataset.nodeId = nodeId;
         this.contextMenu.style.left = `${e.clientX}px`;
         this.contextMenu.style.top = `${e.clientY}px`;
+
+        // 그룹 해제 메뉴 표시/숨김
+        const element = document.getElementById(nodeId);
+        const groupMenuItem = this.contextMenu.querySelector('[data-action="removeFromGroup"]');
+        if (element && element.classList.contains('in-group')) {
+            groupMenuItem.style.display = 'block';
+        } else {
+            groupMenuItem.style.display = 'none';
+        }
+
         this.contextMenu.classList.remove('hidden');
     }
 
@@ -887,6 +1085,13 @@ class OrgChartApp {
                 break;
             case 'toggleLock':
                 this.toggleNodeLock(nodeId);
+                break;
+            case 'removeFromGroup':
+                const element = document.getElementById(nodeId);
+                if (element && element.dataset.groupId) {
+                    this.removeGroup(element.dataset.groupId);
+                    alert('그룹이 해제되었습니다.');
+                }
                 break;
             case 'delete':
                 if (confirm('이 부서와 모든 하위 부서를 삭제하시겠습니까?')) {
@@ -1068,13 +1273,25 @@ class OrgChartApp {
             if (!node.locked) {
                 // Center this node above its children
                 const nodeWidth = Math.max(totalWidth, 180);
-                node.x = offset + nodeWidth / 2 - 75;
-                node.y = 100 + level * 150;
+                const newX = offset + nodeWidth / 2 - 75;
+                const newY = 100 + level * 150;
+
+                // 이동량 계산 (그룹 업데이트용)
+                const deltaX = newX - node.x;
+                const deltaY = newY - node.y;
+
+                node.x = newX;
+                node.y = newY;
 
                 const element = document.getElementById(node.id);
                 if (element) {
                     element.style.left = `${node.x}px`;
                     element.style.top = `${node.y}px`;
+
+                    // 그룹에 속한 경우, 그룹 내 다른 노드들도 같이 이동
+                    if (element.dataset.groupId) {
+                        this.updateGroupPositions(element.dataset.groupId, node.id, deltaX, deltaY);
+                    }
                 }
             }
 
@@ -1092,6 +1309,32 @@ class OrgChartApp {
         this.saveToLocalStorage();
     }
 
+    updateGroupPositions(groupId, movedNodeId, deltaX, deltaY) {
+        const group = this.nodeGroups.find(g => g.id === groupId);
+        if (!group) return;
+
+        // 기준 노드가 이동한 경우, 그룹 내 다른 노드들도 상대적 위치 유지
+        if (group.baseNodeId === movedNodeId) {
+            group.relativePositions.forEach(rel => {
+                if (rel.nodeId === movedNodeId) return; // 기준 노드는 이미 이동함
+
+                const node = this.nodes.get(rel.nodeId);
+                if (!node || node.locked) return; // 잠긴 노드는 이동하지 않음
+
+                // 상대적 위치 유지
+                const baseNode = this.nodes.get(group.baseNodeId);
+                node.x = baseNode.x + rel.offsetX;
+                node.y = baseNode.y + rel.offsetY;
+
+                const element = document.getElementById(rel.nodeId);
+                if (element) {
+                    element.style.left = `${node.x}px`;
+                    element.style.top = `${node.y}px`;
+                }
+            });
+        }
+    }
+
     // Data Persistence
     saveToLocalStorage() {
         const data = {
@@ -1100,7 +1343,9 @@ class OrgChartApp {
             chartTitle: this.chartTitle,
             chartDate: this.chartDate,
             chartTitlePos: this.chartTitlePos,
-            chartDatePos: this.chartDatePos
+            chartDatePos: this.chartDatePos,
+            nodeGroups: this.nodeGroups,
+            nextGroupId: this.nextGroupId
         };
         localStorage.setItem('orgChartData', JSON.stringify(data));
     }
@@ -1169,6 +1414,23 @@ class OrgChartApp {
             });
 
             this.updateConnections();
+
+            // 그룹 정보 복원
+            if (data.nodeGroups) {
+                this.nodeGroups = data.nodeGroups;
+                this.nextGroupId = data.nextGroupId || 1;
+
+                // 노드에 그룹 표시 적용
+                this.nodeGroups.forEach(group => {
+                    group.nodeIds.forEach(nodeId => {
+                        const element = document.getElementById(nodeId);
+                        if (element) {
+                            element.classList.add('in-group');
+                            element.dataset.groupId = group.id;
+                        }
+                    });
+                });
+            }
         } catch (e) {
             console.error('Failed to load data:', e);
         }
@@ -1181,7 +1443,9 @@ class OrgChartApp {
             chartTitle: this.chartTitle,
             chartDate: this.chartDate,
             chartTitlePos: this.chartTitlePos,
-            chartDatePos: this.chartDatePos
+            chartDatePos: this.chartDatePos,
+            nodeGroups: this.nodeGroups,
+            nextGroupId: this.nextGroupId
         };
 
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1262,6 +1526,24 @@ class OrgChartApp {
                 });
 
                 this.updateConnections();
+
+                // 그룹 정보 복원
+                if (data.nodeGroups) {
+                    this.nodeGroups = data.nodeGroups;
+                    this.nextGroupId = data.nextGroupId || 1;
+
+                    // 노드에 그룹 표시 적용
+                    this.nodeGroups.forEach(group => {
+                        group.nodeIds.forEach(nodeId => {
+                            const element = document.getElementById(nodeId);
+                            if (element) {
+                                element.classList.add('in-group');
+                                element.dataset.groupId = group.id;
+                            }
+                        });
+                    });
+                }
+
                 this.saveToLocalStorage();
                 alert('데이터를 성공적으로 불러왔습니다.');
             } catch (err) {
