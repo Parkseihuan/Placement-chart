@@ -96,6 +96,7 @@ class OrgChartApp {
             members: data.members || [], // 배열로 여러 직원 관리
             parentId: data.parentId || null,
             isIndependent: data.isIndependent || false, // 독립 노드 여부
+            layoutDirection: data.layoutDirection || 'vertical', // 직원 목록 레이아웃 (vertical/horizontal)
             connectionStart: data.connectionStart || 'bottom', // 부모의 어느 점에서 시작 (top/bottom/left/right)
             connectionEnd: data.connectionEnd || 'top', // 이 노드의 어느 점으로 연결 (top/bottom/left/right)
             x: data.x || 100,
@@ -116,6 +117,9 @@ class OrgChartApp {
         element.className = 'org-node';
         if (node.isIndependent) {
             element.classList.add('independent-node');
+        }
+        if (node.layoutDirection === 'horizontal') {
+            element.classList.add('layout-horizontal');
         }
         element.id = node.id;
         element.style.left = `${node.x}px`;
@@ -555,6 +559,11 @@ class OrgChartApp {
         document.getElementById('deptName').value = node.deptName;
         document.getElementById('isIndependent').checked = node.isIndependent || false;
 
+        // 레이아웃 방향 설정
+        const layoutDirection = node.layoutDirection || 'vertical';
+        const layoutRadio = document.querySelector(`input[name="layoutDirection"][value="${layoutDirection}"]`);
+        if (layoutRadio) layoutRadio.checked = true;
+
         // 기존 멤버 목록 로드
         this.currentMembers = node.members ? [...node.members] : [];
         this.renderMembersList();
@@ -619,10 +628,14 @@ class OrgChartApp {
     handleFormSubmit(e) {
         e.preventDefault();
 
+        const layoutRadio = document.querySelector('input[name="layoutDirection"]:checked');
+        const layoutDirection = layoutRadio ? layoutRadio.value : 'vertical';
+
         const data = {
             deptName: document.getElementById('deptName').value.trim(),
             members: [...this.currentMembers], // 현재 편집 중인 직원 목록 사용
-            isIndependent: document.getElementById('isIndependent').checked
+            isIndependent: document.getElementById('isIndependent').checked,
+            layoutDirection: layoutDirection
         };
 
         const mode = this.nodeForm.dataset.mode;
@@ -700,14 +713,23 @@ class OrgChartApp {
                 node.deptName = data.deptName;
                 node.members = data.members;
                 node.isIndependent = data.isIndependent;
+                node.layoutDirection = data.layoutDirection;
 
-                // 독립 노드 상태가 변경되면 요소 다시 렌더링
+                // 요소 클래스 업데이트
                 const element = document.getElementById(nodeId);
                 if (element) {
+                    // 독립 노드 클래스
                     if (node.isIndependent) {
                         element.classList.add('independent-node');
                     } else {
                         element.classList.remove('independent-node');
+                    }
+
+                    // 레이아웃 방향 클래스
+                    if (node.layoutDirection === 'horizontal') {
+                        element.classList.add('layout-horizontal');
+                    } else {
+                        element.classList.remove('layout-horizontal');
                     }
                 }
 
@@ -981,6 +1003,7 @@ class OrgChartApp {
                     members: members,
                     parentId: nodeData.parentId,
                     isIndependent: nodeData.isIndependent || false,
+                    layoutDirection: nodeData.layoutDirection || 'vertical',
                     connectionStart: nodeData.connectionStart || 'bottom',
                     connectionEnd: nodeData.connectionEnd || 'top',
                     x: nodeData.x,
@@ -1054,6 +1077,7 @@ class OrgChartApp {
                         members: members,
                         parentId: nodeData.parentId,
                         isIndependent: nodeData.isIndependent || false,
+                        layoutDirection: nodeData.layoutDirection || 'vertical',
                         connectionStart: nodeData.connectionStart || 'bottom',
                         connectionEnd: nodeData.connectionEnd || 'top',
                         x: nodeData.x,

@@ -51,6 +51,20 @@
                     </div>
 
                     <div class="form-group">
+                        <label>직원 목록 레이아웃</label>
+                        <div style="display: flex; gap: 15px; margin-top: 5px;">
+                            <label>
+                                <input type="radio" name="layoutDirection" value="vertical" checked>
+                                세로 (기본)
+                            </label>
+                            <label>
+                                <input type="radio" name="layoutDirection" value="horizontal">
+                                가로 (이름이 오른쪽에 표시)
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
                         <label>직원 목록</label>
                         <div id="membersList" class="members-list">
                             <!-- 직원 목록이 동적으로 추가됨 -->
