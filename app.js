@@ -96,6 +96,8 @@ class OrgChartApp {
             members: data.members || [], // 배열로 여러 직원 관리
             parentId: data.parentId || null,
             isIndependent: data.isIndependent || false, // 독립 노드 여부
+            connectionStart: data.connectionStart || 'bottom', // 부모의 어느 점에서 시작 (top/bottom/left/right)
+            connectionEnd: data.connectionEnd || 'top', // 이 노드의 어느 점으로 연결 (top/bottom/left/right)
             x: data.x || 100,
             y: data.y || 100
         };
@@ -245,9 +247,12 @@ class OrgChartApp {
         e.preventDefault();
         e.stopPropagation();
 
+        const direction = e.target.dataset.direction; // top, bottom, left, right
+
         this.isDraggingConnection = true;
         this.connectionStart = {
             nodeId: nodeId,
+            direction: direction, // 시작점 방향 저장
             x: e.clientX + this.canvasContainer.scrollLeft,
             y: e.clientY + this.canvasContainer.scrollTop
         };
@@ -345,16 +350,26 @@ class OrgChartApp {
                 this.tempLine = null;
             }
 
-            // 타겟 노드 찾기
-            const target = e.target.closest('.org-node');
-            if (target && target.id !== this.connectionStart.nodeId) {
-                const targetNodeId = target.id;
+            // 타겟 앵커 또는 노드 찾기
+            const targetAnchor = e.target.closest('.connection-anchor');
+            const targetNode = e.target.closest('.org-node');
+
+            if (targetNode && targetNode.id !== this.connectionStart.nodeId) {
+                const targetNodeId = targetNode.id;
                 const sourceNodeId = this.connectionStart.nodeId;
 
+                // 연결 종료 방향 결정
+                let endDirection = 'top'; // 기본값
+                if (targetAnchor && targetAnchor.dataset.direction) {
+                    endDirection = targetAnchor.dataset.direction;
+                }
+
                 // 연결 생성: 타겟 노드의 부모를 소스 노드로 설정
-                const targetNode = this.nodes.get(targetNodeId);
-                if (targetNode) {
-                    targetNode.parentId = sourceNodeId;
+                const node = this.nodes.get(targetNodeId);
+                if (node) {
+                    node.parentId = sourceNodeId;
+                    node.connectionStart = this.connectionStart.direction; // 소스의 앵커 방향
+                    node.connectionEnd = endDirection; // 타겟의 앵커 방향
                     this.updateConnections();
                     this.saveState();
                     this.saveToLocalStorage();
@@ -422,30 +437,70 @@ class OrgChartApp {
         });
     }
 
+    // 앵커 포인트 좌표 계산 헬퍼 함수
+    getAnchorPoint(node, direction) {
+        const element = document.getElementById(node.id);
+        if (!element) return { x: node.x, y: node.y };
+
+        const width = element.offsetWidth;
+        const height = element.offsetHeight;
+
+        switch (direction) {
+            case 'top':
+                return { x: node.x + width / 2, y: node.y };
+            case 'bottom':
+                return { x: node.x + width / 2, y: node.y + height };
+            case 'left':
+                return { x: node.x, y: node.y + height / 2 };
+            case 'right':
+                return { x: node.x + width, y: node.y + height / 2 };
+            default:
+                return { x: node.x + width / 2, y: node.y };
+        }
+    }
+
     drawConnection(parent, child) {
         const parentEl = document.getElementById(parent.id);
         const childEl = document.getElementById(child.id);
 
         if (!parentEl || !childEl) return;
 
-        const parentRect = {
-            x: parent.x + parentEl.offsetWidth / 2,
-            y: parent.y + parentEl.offsetHeight
-        };
+        // connectionStart는 부모의 앵커, connectionEnd는 자식의 앵커
+        const startDirection = child.connectionStart || 'bottom';
+        const endDirection = child.connectionEnd || 'top';
 
-        const childRect = {
-            x: child.x + childEl.offsetWidth / 2,
-            y: child.y
-        };
+        const startPoint = this.getAnchorPoint(parent, startDirection);
+        const endPoint = this.getAnchorPoint(child, endDirection);
 
-        // Create path with vertical-horizontal-vertical pattern
-        const midY = (parentRect.y + childRect.y) / 2;
-
+        // 중간점을 계산하여 경로 생성
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        const d = `M ${parentRect.x} ${parentRect.y}
-                   L ${parentRect.x} ${midY}
-                   L ${childRect.x} ${midY}
-                   L ${childRect.x} ${childRect.y}`;
+
+        // 방향에 따라 다른 경로 패턴 사용
+        let d;
+        if ((startDirection === 'top' || startDirection === 'bottom') &&
+            (endDirection === 'top' || endDirection === 'bottom')) {
+            // 수직-수평-수직 패턴
+            const midY = (startPoint.y + endPoint.y) / 2;
+            d = `M ${startPoint.x} ${startPoint.y}
+                 L ${startPoint.x} ${midY}
+                 L ${endPoint.x} ${midY}
+                 L ${endPoint.x} ${endPoint.y}`;
+        } else if ((startDirection === 'left' || startDirection === 'right') &&
+                   (endDirection === 'left' || endDirection === 'right')) {
+            // 수평-수직-수평 패턴
+            const midX = (startPoint.x + endPoint.x) / 2;
+            d = `M ${startPoint.x} ${startPoint.y}
+                 L ${midX} ${startPoint.y}
+                 L ${midX} ${endPoint.y}
+                 L ${endPoint.x} ${endPoint.y}`;
+        } else {
+            // 혼합 패턴 (수직+수평 조합)
+            const midX = (startPoint.x + endPoint.x) / 2;
+            const midY = (startPoint.y + endPoint.y) / 2;
+            d = `M ${startPoint.x} ${startPoint.y}
+                 L ${midX} ${midY}
+                 L ${endPoint.x} ${endPoint.y}`;
+        }
 
         path.setAttribute('d', d);
         path.setAttribute('class', 'connection-line');
@@ -926,6 +981,8 @@ class OrgChartApp {
                     members: members,
                     parentId: nodeData.parentId,
                     isIndependent: nodeData.isIndependent || false,
+                    connectionStart: nodeData.connectionStart || 'bottom',
+                    connectionEnd: nodeData.connectionEnd || 'top',
                     x: nodeData.x,
                     y: nodeData.y
                 };
@@ -997,6 +1054,8 @@ class OrgChartApp {
                         members: members,
                         parentId: nodeData.parentId,
                         isIndependent: nodeData.isIndependent || false,
+                        connectionStart: nodeData.connectionStart || 'bottom',
+                        connectionEnd: nodeData.connectionEnd || 'top',
                         x: nodeData.x,
                         y: nodeData.y
                     };
