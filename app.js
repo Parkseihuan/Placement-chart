@@ -97,6 +97,7 @@ class OrgChartApp {
             parentId: data.parentId || null,
             isIndependent: data.isIndependent || false, // 독립 노드 여부
             layoutDirection: data.layoutDirection || 'vertical', // 직원 목록 레이아웃 (vertical/horizontal)
+            locked: data.locked || false, // 위치 고정 여부
             connectionStart: data.connectionStart || 'bottom', // 부모의 어느 점에서 시작 (top/bottom/left/right)
             connectionEnd: data.connectionEnd || 'top', // 이 노드의 어느 점으로 연결 (top/bottom/left/right)
             x: data.x || 100,
@@ -120,6 +121,9 @@ class OrgChartApp {
         }
         if (node.layoutDirection === 'horizontal') {
             element.classList.add('layout-horizontal');
+        }
+        if (node.locked) {
+            element.classList.add('locked');
         }
         element.id = node.id;
         element.style.left = `${node.x}px`;
@@ -775,6 +779,9 @@ class OrgChartApp {
             case 'addSibling':
                 this.showAddSiblingModal(nodeId);
                 break;
+            case 'toggleLock':
+                this.toggleNodeLock(nodeId);
+                break;
             case 'delete':
                 if (confirm('이 부서와 모든 하위 부서를 삭제하시겠습니까?')) {
                     this.deleteNode(nodeId);
@@ -783,6 +790,26 @@ class OrgChartApp {
         }
 
         this.hideContextMenu();
+    }
+
+    toggleNodeLock(nodeId) {
+        const node = this.nodes.get(nodeId);
+        if (!node) return;
+
+        node.locked = !node.locked;
+
+        // 요소 클래스 업데이트
+        const element = document.getElementById(nodeId);
+        if (element) {
+            if (node.locked) {
+                element.classList.add('locked');
+            } else {
+                element.classList.remove('locked');
+            }
+        }
+
+        this.saveState();
+        this.saveToLocalStorage();
     }
 
     editNode(nodeId) {
@@ -931,18 +958,21 @@ class OrgChartApp {
                 });
             }
 
-            // Center this node above its children
-            const nodeWidth = Math.max(totalWidth, 180);
-            node.x = offset + nodeWidth / 2 - 75;
-            node.y = 100 + level * 150;
+            // 위치가 고정된 노드는 이동하지 않음
+            if (!node.locked) {
+                // Center this node above its children
+                const nodeWidth = Math.max(totalWidth, 180);
+                node.x = offset + nodeWidth / 2 - 75;
+                node.y = 100 + level * 150;
 
-            const element = document.getElementById(node.id);
-            if (element) {
-                element.style.left = `${node.x}px`;
-                element.style.top = `${node.y}px`;
+                const element = document.getElementById(node.id);
+                if (element) {
+                    element.style.left = `${node.x}px`;
+                    element.style.top = `${node.y}px`;
+                }
             }
 
-            return nodeWidth;
+            return Math.max(totalWidth, 180);
         };
 
         let totalOffset = 100;
@@ -1004,6 +1034,7 @@ class OrgChartApp {
                     parentId: nodeData.parentId,
                     isIndependent: nodeData.isIndependent || false,
                     layoutDirection: nodeData.layoutDirection || 'vertical',
+                    locked: nodeData.locked || false,
                     connectionStart: nodeData.connectionStart || 'bottom',
                     connectionEnd: nodeData.connectionEnd || 'top',
                     x: nodeData.x,
@@ -1078,6 +1109,7 @@ class OrgChartApp {
                         parentId: nodeData.parentId,
                         isIndependent: nodeData.isIndependent || false,
                         layoutDirection: nodeData.layoutDirection || 'vertical',
+                        locked: nodeData.locked || false,
                         connectionStart: nodeData.connectionStart || 'bottom',
                         connectionEnd: nodeData.connectionEnd || 'top',
                         x: nodeData.x,
