@@ -25,6 +25,12 @@ class OrgChartApp {
         // 헤더 정보
         this.chartTitle = '용인대학교 교직원 배치표';
         this.chartDate = '2024. 2. 8. 현재';
+        this.chartTitlePos = { x: 100, y: 20 };
+        this.chartDatePos = { x: null, y: 20 }; // x는 right 기준이므로 null
+
+        // 헤더 드래그 관련
+        this.draggedHeader = null;
+        this.headerDragOffset = { x: 0, y: 0 };
 
         this.initElements();
         this.initEventListeners();
@@ -77,12 +83,24 @@ class OrgChartApp {
         this.canvasContainer.addEventListener('mousedown', (e) => this.handleCanvasMouseDown(e));
 
         // Chart header events
-        document.getElementById('chartTitle').addEventListener('blur', (e) => {
+        const chartTitleEl = document.getElementById('chartTitle');
+        const chartDateEl = document.getElementById('chartDate');
+
+        chartTitleEl.addEventListener('mousedown', (e) => this.handleHeaderMouseDown(e, 'title'));
+        chartTitleEl.addEventListener('dblclick', (e) => this.handleHeaderDoubleClick(e, chartTitleEl));
+        chartTitleEl.addEventListener('blur', (e) => {
             this.chartTitle = e.target.textContent;
+            e.target.setAttribute('contenteditable', 'false');
+            e.target.classList.remove('editing');
             this.saveToLocalStorage();
         });
-        document.getElementById('chartDate').addEventListener('blur', (e) => {
+
+        chartDateEl.addEventListener('mousedown', (e) => this.handleHeaderMouseDown(e, 'date'));
+        chartDateEl.addEventListener('dblclick', (e) => this.handleHeaderDoubleClick(e, chartDateEl));
+        chartDateEl.addEventListener('blur', (e) => {
             this.chartDate = e.target.textContent;
+            e.target.setAttribute('contenteditable', 'false');
+            e.target.classList.remove('editing');
             this.saveToLocalStorage();
         });
     }
@@ -282,6 +300,48 @@ class OrgChartApp {
         this.connections.appendChild(this.tempLine);
     }
 
+    // Header Drag (헤더 드래그)
+    handleHeaderMouseDown(e, type) {
+        // 편집 중이면 드래그하지 않음
+        if (e.target.classList.contains('editing')) {
+            return;
+        }
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const element = e.target;
+        const rect = element.getBoundingClientRect();
+
+        this.draggedHeader = {
+            type: type,
+            element: element,
+            isRight: type === 'date' // date는 right 기준
+        };
+
+        this.headerDragOffset = {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        };
+    }
+
+    handleHeaderDoubleClick(e, element) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // 편집 모드 활성화
+        element.setAttribute('contenteditable', 'true');
+        element.classList.add('editing');
+        element.focus();
+
+        // 텍스트 전체 선택
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
+
     // Canvas Panning (화면 이동)
     handleCanvasMouseDown(e) {
         // 노드를 클릭한 경우는 패닝하지 않음
@@ -322,6 +382,37 @@ class OrgChartApp {
     }
 
     handleMouseMove(e) {
+        // 헤더 드래그 처리
+        if (this.draggedHeader) {
+            const newX = e.clientX - this.headerDragOffset.x + this.canvasContainer.scrollLeft;
+            const newY = e.clientY - this.headerDragOffset.y + this.canvasContainer.scrollTop;
+
+            if (this.draggedHeader.isRight) {
+                // date는 right 기준
+                const containerWidth = this.orgChart.offsetWidth;
+                const elementWidth = this.draggedHeader.element.offsetWidth;
+                const rightPos = containerWidth - newX - elementWidth;
+                this.draggedHeader.element.style.right = `${Math.max(0, rightPos)}px`;
+                this.draggedHeader.element.style.left = 'auto';
+                this.chartDatePos.x = rightPos;
+            } else {
+                // title은 left 기준
+                this.draggedHeader.element.style.left = `${Math.max(0, newX)}px`;
+                this.draggedHeader.element.style.right = 'auto';
+                this.chartTitlePos.x = newX;
+            }
+
+            this.draggedHeader.element.style.top = `${Math.max(0, newY)}px`;
+
+            if (this.draggedHeader.type === 'title') {
+                this.chartTitlePos.y = newY;
+            } else {
+                this.chartDatePos.y = newY;
+            }
+
+            return;
+        }
+
         // 연결선 드래그 처리
         if (this.isDraggingConnection && this.tempLine) {
             const x = e.clientX + this.canvasContainer.scrollLeft;
@@ -358,6 +449,13 @@ class OrgChartApp {
     }
 
     handleMouseUp(e) {
+        // 헤더 드래그 종료
+        if (this.draggedHeader) {
+            this.draggedHeader = null;
+            this.saveToLocalStorage();
+            return;
+        }
+
         // 연결선 드래그 종료
         if (this.isDraggingConnection) {
             // 임시 선 제거
@@ -1000,7 +1098,9 @@ class OrgChartApp {
             nodes: Array.from(this.nodes.values()),
             nextId: this.nextId,
             chartTitle: this.chartTitle,
-            chartDate: this.chartDate
+            chartDate: this.chartDate,
+            chartTitlePos: this.chartTitlePos,
+            chartDatePos: this.chartDatePos
         };
         localStorage.setItem('orgChartData', JSON.stringify(data));
     }
@@ -1021,6 +1121,22 @@ class OrgChartApp {
             if (data.chartDate) {
                 this.chartDate = data.chartDate;
                 document.getElementById('chartDate').textContent = data.chartDate;
+            }
+
+            // 헤더 위치 복원
+            if (data.chartTitlePos) {
+                this.chartTitlePos = data.chartTitlePos;
+                const titleEl = document.getElementById('chartTitle');
+                titleEl.style.left = `${this.chartTitlePos.x}px`;
+                titleEl.style.top = `${this.chartTitlePos.y}px`;
+            }
+            if (data.chartDatePos) {
+                this.chartDatePos = data.chartDatePos;
+                const dateEl = document.getElementById('chartDate');
+                if (this.chartDatePos.x !== null) {
+                    dateEl.style.right = `${this.chartDatePos.x}px`;
+                }
+                dateEl.style.top = `${this.chartDatePos.y}px`;
             }
 
             // Clear existing
@@ -1063,7 +1179,9 @@ class OrgChartApp {
             nodes: Array.from(this.nodes.values()),
             nextId: this.nextId,
             chartTitle: this.chartTitle,
-            chartDate: this.chartDate
+            chartDate: this.chartDate,
+            chartTitlePos: this.chartTitlePos,
+            chartDatePos: this.chartDatePos
         };
 
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1100,6 +1218,22 @@ class OrgChartApp {
                 if (data.chartDate) {
                     this.chartDate = data.chartDate;
                     document.getElementById('chartDate').textContent = data.chartDate;
+                }
+
+                // 헤더 위치 복원
+                if (data.chartTitlePos) {
+                    this.chartTitlePos = data.chartTitlePos;
+                    const titleEl = document.getElementById('chartTitle');
+                    titleEl.style.left = `${this.chartTitlePos.x}px`;
+                    titleEl.style.top = `${this.chartTitlePos.y}px`;
+                }
+                if (data.chartDatePos) {
+                    this.chartDatePos = data.chartDatePos;
+                    const dateEl = document.getElementById('chartDate');
+                    if (this.chartDatePos.x !== null) {
+                        dateEl.style.right = `${this.chartDatePos.x}px`;
+                    }
+                    dateEl.style.top = `${this.chartDatePos.y}px`;
                 }
 
                 // Recreate nodes

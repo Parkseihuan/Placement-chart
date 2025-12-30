@@ -23,8 +23,8 @@
 
         <main class="canvas-container">
             <div id="chartHeader" class="chart-header">
-                <div id="chartTitle" class="chart-title" contenteditable="true">용인대학교 교직원 배치표</div>
-                <div id="chartDate" class="chart-date" contenteditable="true">2024. 2. 8. 현재</div>
+                <div id="chartTitle" class="chart-title" contenteditable="false">용인대학교 교직원 배치표</div>
+                <div id="chartDate" class="chart-date" contenteditable="false">2024. 2. 8. 현재</div>
             </div>
             <svg id="connections"></svg>
             <div id="orgChart"></div>
@@ -41,24 +41,24 @@
                     </div>
 
                     <div class="form-group">
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                            <input type="checkbox" id="isIndependent" style="cursor: pointer;">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="isIndependent">
                             <span>독립 노드 (연결선 없음)</span>
                         </label>
-                        <small style="display: block; margin-top: 5px; margin-left: 24px; color: #7f8c8d; font-size: 12px;">
-                            ※ 체크 시 다른 부서와 연결선이 표시되지 않습니다 (예: 노동조합, 총동문회)
+                        <small class="form-hint">
+                            ※ 다른 부서와 연결선이 표시되지 않습니다 (예: 노동조합, 총동문회)
                         </small>
                     </div>
 
                     <div class="form-group">
-                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">직원 목록 레이아웃</label>
-                        <div style="display: flex; gap: 20px; margin-top: 5px;">
-                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                                <input type="radio" name="layoutDirection" value="vertical" checked style="cursor: pointer;">
+                        <label class="group-label">직원 목록 레이아웃</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="layoutDirection" value="vertical" checked>
                                 <span>세로 (기본)</span>
                             </label>
-                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                                <input type="radio" name="layoutDirection" value="horizontal" style="cursor: pointer;">
+                            <label class="radio-label">
+                                <input type="radio" name="layoutDirection" value="horizontal">
                                 <span>가로 (배지형)</span>
                             </label>
                         </div>
