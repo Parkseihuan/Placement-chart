@@ -157,6 +157,16 @@ body {
     transition: box-shadow 0.2s ease, transform 0.1s ease;
 }
 
+/* Independent Node (독립 노드 - 연결선 없음) */
+.org-node.independent-node {
+    border-color: #9b59b6;
+    border-style: dashed;
+}
+
+.org-node.independent-node .node-header {
+    background: #9b59b6;
+}
+
 .org-node:hover {
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
 }
@@ -526,6 +536,10 @@ body {
         cursor: default;
     }
 
+    .org-node.independent-node {
+        border: 1.5px dashed #666 !important;
+    }
+
     .org-node.selected {
         border-color: #333 !important;
         box-shadow: none !important;
@@ -534,6 +548,12 @@ body {
     .node-header {
         background: #e0e0e0 !important;
         color: #000 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .org-node.independent-node .node-header {
+        background: #d0d0d0 !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }

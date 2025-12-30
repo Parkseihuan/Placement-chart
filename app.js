@@ -95,6 +95,7 @@ class OrgChartApp {
             deptName: data.deptName || '새 부서',
             members: data.members || [], // 배열로 여러 직원 관리
             parentId: data.parentId || null,
+            isIndependent: data.isIndependent || false, // 독립 노드 여부
             x: data.x || 100,
             y: data.y || 100
         };
@@ -111,6 +112,9 @@ class OrgChartApp {
     renderNode(node) {
         const element = document.createElement('div');
         element.className = 'org-node';
+        if (node.isIndependent) {
+            element.classList.add('independent-node');
+        }
         element.id = node.id;
         element.style.left = `${node.x}px`;
         element.style.top = `${node.y}px`;
@@ -405,8 +409,14 @@ class OrgChartApp {
         this.connections.innerHTML = '';
 
         this.nodes.forEach(node => {
+            // 독립 노드는 연결선을 그리지 않음
+            if (node.isIndependent) return;
+
             if (node.parentId && this.nodes.has(node.parentId)) {
                 const parent = this.nodes.get(node.parentId);
+                // 부모가 독립 노드인 경우도 연결선을 그리지 않음
+                if (parent.isIndependent) return;
+
                 this.drawConnection(parent, node);
             }
         });
@@ -447,6 +457,7 @@ class OrgChartApp {
     showAddNodeModal(parentId = null) {
         this.modalTitle.textContent = parentId ? '하위 부서 추가' : '최상위 부서 추가';
         this.nodeForm.reset();
+        document.getElementById('isIndependent').checked = false;
         this.nodeForm.dataset.mode = 'add';
         this.nodeForm.dataset.parentId = parentId || '';
         this.currentMembers = [];
@@ -458,6 +469,7 @@ class OrgChartApp {
     showAddChildModal(nodeId) {
         this.modalTitle.textContent = '하위 부서 추가';
         this.nodeForm.reset();
+        document.getElementById('isIndependent').checked = false;
         this.nodeForm.dataset.mode = 'add-child';
         this.nodeForm.dataset.parentNodeId = nodeId;
         this.currentMembers = [];
@@ -470,6 +482,7 @@ class OrgChartApp {
         const node = this.nodes.get(nodeId);
         this.modalTitle.textContent = '형제 부서 추가';
         this.nodeForm.reset();
+        document.getElementById('isIndependent').checked = false;
         this.nodeForm.dataset.mode = 'add-sibling';
         this.nodeForm.dataset.siblingNodeId = nodeId;
         this.nodeForm.dataset.parentId = node.parentId || '';
@@ -485,6 +498,7 @@ class OrgChartApp {
 
         this.modalTitle.textContent = '부서 정보 편집';
         document.getElementById('deptName').value = node.deptName;
+        document.getElementById('isIndependent').checked = node.isIndependent || false;
 
         // 기존 멤버 목록 로드
         this.currentMembers = node.members ? [...node.members] : [];
@@ -552,7 +566,8 @@ class OrgChartApp {
 
         const data = {
             deptName: document.getElementById('deptName').value.trim(),
-            members: [...this.currentMembers] // 현재 편집 중인 직원 목록 사용
+            members: [...this.currentMembers], // 현재 편집 중인 직원 목록 사용
+            isIndependent: document.getElementById('isIndependent').checked
         };
 
         const mode = this.nodeForm.dataset.mode;
@@ -629,7 +644,20 @@ class OrgChartApp {
             if (node) {
                 node.deptName = data.deptName;
                 node.members = data.members;
+                node.isIndependent = data.isIndependent;
+
+                // 독립 노드 상태가 변경되면 요소 다시 렌더링
+                const element = document.getElementById(nodeId);
+                if (element) {
+                    if (node.isIndependent) {
+                        element.classList.add('independent-node');
+                    } else {
+                        element.classList.remove('independent-node');
+                    }
+                }
+
                 this.updateNodeElement(node);
+                this.updateConnections(); // 연결선 다시 그리기
                 this.saveState();
                 this.saveToLocalStorage();
             }
@@ -897,6 +925,7 @@ class OrgChartApp {
                     deptName: nodeData.deptName,
                     members: members,
                     parentId: nodeData.parentId,
+                    isIndependent: nodeData.isIndependent || false,
                     x: nodeData.x,
                     y: nodeData.y
                 };
@@ -967,6 +996,7 @@ class OrgChartApp {
                         deptName: nodeData.deptName,
                         members: members,
                         parentId: nodeData.parentId,
+                        isIndependent: nodeData.isIndependent || false,
                         x: nodeData.x,
                         y: nodeData.y
                     };
