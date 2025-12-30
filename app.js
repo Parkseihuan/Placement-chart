@@ -256,13 +256,18 @@ class OrgChartApp {
         e.stopPropagation();
 
         const direction = e.target.dataset.direction; // top, bottom, left, right
+        const node = this.nodes.get(nodeId);
+        if (!node) return;
+
+        // 앵커의 실제 중심 위치 계산
+        const anchorPoint = this.getAnchorPoint(node, direction);
 
         this.isDraggingConnection = true;
         this.connectionStart = {
             nodeId: nodeId,
             direction: direction, // 시작점 방향 저장
-            x: e.clientX + this.canvasContainer.scrollLeft,
-            y: e.clientY + this.canvasContainer.scrollTop
+            x: anchorPoint.x,
+            y: anchorPoint.y
         };
 
         // 임시 연결선 생성
@@ -270,10 +275,10 @@ class OrgChartApp {
         this.tempLine.setAttribute('stroke', '#e74c3c');
         this.tempLine.setAttribute('stroke-width', '2');
         this.tempLine.setAttribute('stroke-dasharray', '5,5');
-        this.tempLine.setAttribute('x1', this.connectionStart.x);
-        this.tempLine.setAttribute('y1', this.connectionStart.y);
-        this.tempLine.setAttribute('x2', this.connectionStart.x);
-        this.tempLine.setAttribute('y2', this.connectionStart.y);
+        this.tempLine.setAttribute('x1', anchorPoint.x);
+        this.tempLine.setAttribute('y1', anchorPoint.y);
+        this.tempLine.setAttribute('x2', anchorPoint.x);
+        this.tempLine.setAttribute('y2', anchorPoint.y);
         this.connections.appendChild(this.tempLine);
     }
 
@@ -281,6 +286,9 @@ class OrgChartApp {
     handleCanvasMouseDown(e) {
         // 노드를 클릭한 경우는 패닝하지 않음
         if (e.target.closest('.org-node')) return;
+
+        // 헤더 요소를 클릭한 경우는 패닝하지 않음
+        if (e.target.closest('.chart-title') || e.target.closest('.chart-date')) return;
 
         // 좌클릭만 허용
         if (e.button !== 0) return;

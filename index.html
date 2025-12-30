@@ -41,25 +41,25 @@
                     </div>
 
                     <div class="form-group">
-                        <label>
-                            <input type="checkbox" id="isIndependent">
-                            독립 노드 (연결선 없음)
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="isIndependent" style="cursor: pointer;">
+                            <span>독립 노드 (연결선 없음)</span>
                         </label>
-                        <small style="display: block; margin-top: 5px; color: #7f8c8d;">
-                            체크 시 다른 부서와 연결선이 표시되지 않습니다 (예: 노동조합, 총동문회)
+                        <small style="display: block; margin-top: 5px; margin-left: 24px; color: #7f8c8d; font-size: 12px;">
+                            ※ 체크 시 다른 부서와 연결선이 표시되지 않습니다 (예: 노동조합, 총동문회)
                         </small>
                     </div>
 
                     <div class="form-group">
-                        <label>직원 목록 레이아웃</label>
-                        <div style="display: flex; gap: 15px; margin-top: 5px;">
-                            <label>
-                                <input type="radio" name="layoutDirection" value="vertical" checked>
-                                세로 (기본)
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">직원 목록 레이아웃</label>
+                        <div style="display: flex; gap: 20px; margin-top: 5px;">
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="radio" name="layoutDirection" value="vertical" checked style="cursor: pointer;">
+                                <span>세로 (기본)</span>
                             </label>
-                            <label>
-                                <input type="radio" name="layoutDirection" value="horizontal">
-                                가로 (이름이 오른쪽에 표시)
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="radio" name="layoutDirection" value="horizontal" style="cursor: pointer;">
+                                <span>가로 (배지형)</span>
                             </label>
                         </div>
                     </div>
