@@ -16,6 +16,7 @@
                 <button id="addRootBtn" class="btn btn-primary">최상위 부서 추가</button>
                 <button id="autoLayoutBtn" class="btn btn-secondary">자동 배치</button>
                 <button id="groupSelectionBtn" class="btn btn-secondary">영역 선택</button>
+                <button id="spacingSettingsBtn" class="btn btn-secondary">간격 설정</button>
                 <button id="exportBtn" class="btn btn-secondary">이미지 저장</button>
                 <button id="saveDataBtn" class="btn btn-secondary">데이터 저장</button>
                 <button id="loadDataBtn" class="btn btn-secondary">데이터 불러오기</button>
@@ -80,6 +81,31 @@
                     <div class="form-actions">
                         <button type="submit" class="btn btn-primary">저장</button>
                         <button type="button" id="cancelBtn" class="btn btn-secondary">취소</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 간격 설정 모달 -->
+        <div id="spacingModal" class="modal hidden">
+            <div class="modal-content">
+                <h2>노드 간격 설정</h2>
+                <form id="spacingForm">
+                    <div class="form-group">
+                        <label for="horizontalSpacing">수평 간격 (px)</label>
+                        <input type="number" id="horizontalSpacing" min="50" max="500" value="120" step="10">
+                        <small class="form-hint">형제 노드 간의 수평 간격입니다.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="verticalSpacing">수직 간격 (px)</label>
+                        <input type="number" id="verticalSpacing" min="50" max="500" value="100" step="10">
+                        <small class="form-hint">부모-자식 노드 간의 수직 간격입니다.</small>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">적용</button>
+                        <button type="button" id="cancelSpacingBtn" class="btn btn-secondary">취소</button>
                     </div>
                 </form>
             </div>

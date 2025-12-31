@@ -40,6 +40,10 @@ class OrgChartApp {
         this.nodeGroups = []; // 노드 그룹들
         this.nextGroupId = 1;
 
+        // 노드 간격 설정
+        this.horizontalSpacing = 120; // 수평 간격 (형제 노드)
+        this.verticalSpacing = 100; // 수직 간격 (부모-자식)
+
         this.initElements();
         this.initEventListeners();
         this.loadFromLocalStorage();
@@ -52,6 +56,8 @@ class OrgChartApp {
         this.canvasContainer = document.querySelector('.canvas-container');
         this.nodeModal = document.getElementById('nodeModal');
         this.nodeForm = document.getElementById('nodeForm');
+        this.spacingModal = document.getElementById('spacingModal');
+        this.spacingForm = document.getElementById('spacingForm');
         this.contextMenu = document.getElementById('contextMenu');
         this.modalTitle = document.getElementById('modalTitle');
         this.fileInput = document.getElementById('fileInput');
@@ -64,6 +70,7 @@ class OrgChartApp {
         document.getElementById('addRootBtn').addEventListener('click', () => this.showAddNodeModal());
         document.getElementById('autoLayoutBtn').addEventListener('click', () => this.autoLayout());
         document.getElementById('groupSelectionBtn').addEventListener('click', () => this.toggleSelectionMode());
+        document.getElementById('spacingSettingsBtn').addEventListener('click', () => this.showSpacingModal());
         document.getElementById('exportBtn').addEventListener('click', () => this.exportAsImage());
         document.getElementById('saveDataBtn').addEventListener('click', () => this.saveToFile());
         document.getElementById('loadDataBtn').addEventListener('click', () => this.fileInput.click());
@@ -75,6 +82,10 @@ class OrgChartApp {
         this.nodeForm.addEventListener('submit', (e) => this.handleFormSubmit(e));
         document.getElementById('cancelBtn').addEventListener('click', () => this.hideModal());
         document.getElementById('addMemberBtn').addEventListener('click', () => this.addMember());
+
+        // Spacing modal events
+        this.spacingForm.addEventListener('submit', (e) => this.handleSpacingFormSubmit(e));
+        document.getElementById('cancelSpacingBtn').addEventListener('click', () => this.hideSpacingModal());
 
         // Context menu
         this.contextMenu.addEventListener('click', (e) => this.handleContextMenuClick(e));
@@ -887,6 +898,31 @@ class OrgChartApp {
         this.renderMembersList();
     }
 
+    // Spacing Settings Modal
+    showSpacingModal() {
+        document.getElementById('horizontalSpacing').value = this.horizontalSpacing;
+        document.getElementById('verticalSpacing').value = this.verticalSpacing;
+        this.spacingModal.classList.remove('hidden');
+        document.getElementById('horizontalSpacing').focus();
+    }
+
+    hideSpacingModal() {
+        this.spacingModal.classList.add('hidden');
+        this.spacingForm.reset();
+    }
+
+    handleSpacingFormSubmit(e) {
+        e.preventDefault();
+
+        this.horizontalSpacing = parseInt(document.getElementById('horizontalSpacing').value);
+        this.verticalSpacing = parseInt(document.getElementById('verticalSpacing').value);
+
+        this.hideSpacingModal();
+        this.saveToLocalStorage();
+
+        alert(`간격이 설정되었습니다.\n수평: ${this.horizontalSpacing}px, 수직: ${this.verticalSpacing}px\n\n자동 배치를 클릭하여 적용하세요.`);
+    }
+
     // Member Management
     addMember() {
         const position = document.getElementById('memberPosition').value.trim();
@@ -948,18 +984,18 @@ class OrgChartApp {
 
         if (mode === 'add') {
             const parentId = this.nodeForm.dataset.parentId || null;
-            let x = 100, y = 100;
+            let x = 100, y = 120;
 
             if (parentId) {
                 const parent = this.nodes.get(parentId);
                 const siblings = this.getChildren(parentId);
-                x = parent.x + siblings.length * 180;
-                y = parent.y + 150;
+                x = parent.x + siblings.length * this.horizontalSpacing;
+                y = parent.y + this.verticalSpacing;
             } else {
                 // Find a good position for root node
                 const rootNodes = Array.from(this.nodes.values()).filter(n => !n.parentId);
-                x = 100 + rootNodes.length * 200;
-                y = 100;
+                x = 100 + rootNodes.length * (this.horizontalSpacing + 20);
+                y = 120;
             }
 
             data.parentId = parentId;
@@ -975,11 +1011,11 @@ class OrgChartApp {
 
             // 부모 아래 중앙에 배치
             let x = parent.x;
-            let y = parent.y + 150;
+            let y = parent.y + this.verticalSpacing;
 
             // 이미 자식이 있으면 옆으로 배치
             if (siblings.length > 0) {
-                x = parent.x + siblings.length * 200;
+                x = parent.x + siblings.length * this.horizontalSpacing;
             }
 
             data.parentId = parentId;
@@ -998,12 +1034,12 @@ class OrgChartApp {
                 // 부모가 있는 경우
                 const parent = this.nodes.get(parentId);
                 const siblings = this.getChildren(parentId);
-                x = parent.x + siblings.length * 200;
-                y = parent.y + 150;
+                x = parent.x + siblings.length * this.horizontalSpacing;
+                y = parent.y + this.verticalSpacing;
             } else {
                 // 최상위 노드인 경우
                 const rootNodes = Array.from(this.nodes.values()).filter(n => !n.parentId);
-                x = sibling.x + 250;
+                x = sibling.x + (this.horizontalSpacing + 70);
                 y = sibling.y;
             }
 
@@ -1164,6 +1200,7 @@ class OrgChartApp {
 
         if (e.key === 'Escape') {
             this.hideModal();
+            this.hideSpacingModal();
             this.hideContextMenu();
             this.deselectAll();
         }
@@ -1270,7 +1307,7 @@ class OrgChartApp {
             let totalWidth = 0;
 
             if (children.length === 0) {
-                totalWidth = 180;
+                totalWidth = this.horizontalSpacing;
             } else {
                 children.forEach(child => {
                     totalWidth += layoutTree(child, level + 1, offset + totalWidth);
@@ -1280,9 +1317,9 @@ class OrgChartApp {
             // 위치가 고정된 노드는 이동하지 않음
             if (!node.locked) {
                 // Center this node above its children
-                const nodeWidth = Math.max(totalWidth, 180);
+                const nodeWidth = Math.max(totalWidth, this.horizontalSpacing);
                 const newX = offset + nodeWidth / 2 - 75;
-                const newY = 100 + level * 150;
+                const newY = 120 + level * this.verticalSpacing;
 
                 // 이동량 계산 (그룹 업데이트용)
                 const deltaX = newX - node.x;
@@ -1303,7 +1340,7 @@ class OrgChartApp {
                 }
             }
 
-            return Math.max(totalWidth, 180);
+            return Math.max(totalWidth, this.horizontalSpacing);
         };
 
         let totalOffset = 100;
@@ -1353,7 +1390,9 @@ class OrgChartApp {
             chartTitlePos: this.chartTitlePos,
             chartDatePos: this.chartDatePos,
             nodeGroups: this.nodeGroups,
-            nextGroupId: this.nextGroupId
+            nextGroupId: this.nextGroupId,
+            horizontalSpacing: this.horizontalSpacing,
+            verticalSpacing: this.verticalSpacing
         };
         localStorage.setItem('orgChartData', JSON.stringify(data));
     }
@@ -1439,6 +1478,14 @@ class OrgChartApp {
                     });
                 });
             }
+
+            // 간격 설정 복원
+            if (data.horizontalSpacing !== undefined) {
+                this.horizontalSpacing = data.horizontalSpacing;
+            }
+            if (data.verticalSpacing !== undefined) {
+                this.verticalSpacing = data.verticalSpacing;
+            }
         } catch (e) {
             console.error('Failed to load data:', e);
         }
@@ -1453,7 +1500,9 @@ class OrgChartApp {
             chartTitlePos: this.chartTitlePos,
             chartDatePos: this.chartDatePos,
             nodeGroups: this.nodeGroups,
-            nextGroupId: this.nextGroupId
+            nextGroupId: this.nextGroupId,
+            horizontalSpacing: this.horizontalSpacing,
+            verticalSpacing: this.verticalSpacing
         };
 
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1550,6 +1599,14 @@ class OrgChartApp {
                             }
                         });
                     });
+                }
+
+                // 간격 설정 복원
+                if (data.horizontalSpacing !== undefined) {
+                    this.horizontalSpacing = data.horizontalSpacing;
+                }
+                if (data.verticalSpacing !== undefined) {
+                    this.verticalSpacing = data.verticalSpacing;
                 }
 
                 this.saveToLocalStorage();
