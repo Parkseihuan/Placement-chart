@@ -97,6 +97,7 @@ class OrgChartApp {
 
         chartTitleEl.addEventListener('mousedown', (e) => this.handleHeaderMouseDown(e, 'title'));
         chartTitleEl.addEventListener('dblclick', (e) => this.handleHeaderDoubleClick(e, chartTitleEl));
+        chartTitleEl.addEventListener('contextmenu', (e) => e.preventDefault());
         chartTitleEl.addEventListener('blur', (e) => {
             this.chartTitle = e.target.textContent;
             e.target.setAttribute('contenteditable', 'false');
@@ -106,6 +107,7 @@ class OrgChartApp {
 
         chartDateEl.addEventListener('mousedown', (e) => this.handleHeaderMouseDown(e, 'date'));
         chartDateEl.addEventListener('dblclick', (e) => this.handleHeaderDoubleClick(e, chartDateEl));
+        chartDateEl.addEventListener('contextmenu', (e) => e.preventDefault());
         chartDateEl.addEventListener('blur', (e) => {
             this.chartDate = e.target.textContent;
             e.target.setAttribute('contenteditable', 'false');
@@ -311,6 +313,12 @@ class OrgChartApp {
 
     // Header Drag (헤더 드래그)
     handleHeaderMouseDown(e, type) {
+        // 우클릭은 무시
+        if (e.button !== 0) {
+            e.preventDefault();
+            return;
+        }
+
         // 편집 중이면 드래그하지 않음
         if (e.target.classList.contains('editing')) {
             return;
@@ -1568,13 +1576,183 @@ class OrgChartApp {
             const wasSelected = this.selectedNode;
             this.deselectAll();
 
-            // 캔버스 생성 (고해상도)
-            const canvas = await html2canvas(this.orgChart, {
-                backgroundColor: '#ffffff',
-                scale: 2, // 고해상도
-                logging: false,
-                useCORS: true
+            // 모든 노드의 범위 계산
+            let minX = Infinity, minY = Infinity;
+            let maxX = -Infinity, maxY = -Infinity;
+
+            this.nodes.forEach(node => {
+                const element = document.getElementById(node.id);
+                if (element) {
+                    const width = element.offsetWidth;
+                    const height = element.offsetHeight;
+                    minX = Math.min(minX, node.x);
+                    minY = Math.min(minY, node.y);
+                    maxX = Math.max(maxX, node.x + width);
+                    maxY = Math.max(maxY, node.y + height);
+                }
             });
+
+            // 헤더 위치도 고려
+            const chartTitle = document.getElementById('chartTitle');
+            const chartDate = document.getElementById('chartDate');
+
+            if (chartTitle) {
+                const titleRect = chartTitle.getBoundingClientRect();
+                const titleX = this.chartTitlePos.x;
+                const titleY = this.chartTitlePos.y;
+                minX = Math.min(minX, titleX);
+                minY = Math.min(minY, titleY);
+                maxX = Math.max(maxX, titleX + titleRect.width);
+                maxY = Math.max(maxY, titleY + titleRect.height);
+            }
+
+            if (chartDate) {
+                const dateRect = chartDate.getBoundingClientRect();
+                const dateX = this.orgChart.offsetWidth - this.chartDatePos.x - dateRect.width;
+                const dateY = this.chartDatePos.y;
+                minX = Math.min(minX, dateX);
+                minY = Math.min(minY, dateY);
+                maxX = Math.max(maxX, dateX + dateRect.width);
+                maxY = Math.max(maxY, dateY + dateRect.height);
+            }
+
+            // 노드가 없는 경우 기본값
+            if (!isFinite(minX) || this.nodes.size === 0) {
+                minX = 0;
+                minY = 0;
+                maxX = 800;
+                maxY = 600;
+            }
+
+            // 여백 추가
+            const padding = 50;
+            minX = Math.max(0, minX - padding);
+            minY = Math.max(0, minY - padding);
+            maxX = maxX + padding;
+            maxY = maxY + padding;
+
+            const contentWidth = maxX - minX;
+            const contentHeight = maxY - minY;
+
+            // 임시 컨테이너 생성
+            const tempContainer = document.createElement('div');
+            tempContainer.style.position = 'absolute';
+            tempContainer.style.left = '-9999px';
+            tempContainer.style.top = '0';
+            tempContainer.style.width = `${contentWidth}px`;
+            tempContainer.style.height = `${contentHeight}px`;
+            tempContainer.style.background = 'white';
+            document.body.appendChild(tempContainer);
+
+            // 노드를 임시 컨테이너에 복제
+            this.nodes.forEach(node => {
+                const element = document.getElementById(node.id);
+                if (element) {
+                    const clone = element.cloneNode(true);
+                    clone.style.left = `${node.x - minX}px`;
+                    clone.style.top = `${node.y - minY}px`;
+                    clone.classList.remove('selected', 'dragging');
+                    tempContainer.appendChild(clone);
+                }
+            });
+
+            // 헤더 복제
+            if (chartTitle) {
+                const titleClone = chartTitle.cloneNode(true);
+                titleClone.style.position = 'absolute';
+                titleClone.style.left = `${this.chartTitlePos.x - minX}px`;
+                titleClone.style.top = `${this.chartTitlePos.y - minY}px`;
+                titleClone.classList.remove('editing');
+                tempContainer.appendChild(titleClone);
+            }
+
+            if (chartDate) {
+                const dateClone = chartDate.cloneNode(true);
+                dateClone.style.position = 'absolute';
+                const dateX = this.orgChart.offsetWidth - this.chartDatePos.x - chartDate.offsetWidth;
+                dateClone.style.left = `${dateX - minX}px`;
+                dateClone.style.top = `${this.chartDatePos.y - minY}px`;
+                dateClone.classList.remove('editing');
+                tempContainer.appendChild(dateClone);
+            }
+
+            // SVG 연결선 복제
+            const svgClone = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svgClone.style.position = 'absolute';
+            svgClone.style.top = '0';
+            svgClone.style.left = '0';
+            svgClone.style.width = `${contentWidth}px`;
+            svgClone.style.height = `${contentHeight}px`;
+            svgClone.setAttribute('width', contentWidth);
+            svgClone.setAttribute('height', contentHeight);
+
+            // 연결선 복제 (위치 조정)
+            this.nodes.forEach(node => {
+                if (node.isIndependent) return;
+                if (node.parentId && this.nodes.has(node.parentId)) {
+                    const parent = this.nodes.get(node.parentId);
+                    if (parent.isIndependent) return;
+
+                    const startDirection = node.connectionStart || 'bottom';
+                    const endDirection = node.connectionEnd || 'top';
+
+                    const startPoint = this.getAnchorPoint(parent, startDirection);
+                    const endPoint = this.getAnchorPoint(node, endDirection);
+
+                    // 좌표 조정
+                    const adjustedStartX = startPoint.x - minX;
+                    const adjustedStartY = startPoint.y - minY;
+                    const adjustedEndX = endPoint.x - minX;
+                    const adjustedEndY = endPoint.y - minY;
+
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+
+                    let d;
+                    if ((startDirection === 'top' || startDirection === 'bottom') &&
+                        (endDirection === 'top' || endDirection === 'bottom')) {
+                        const midY = (adjustedStartY + adjustedEndY) / 2;
+                        d = `M ${adjustedStartX} ${adjustedStartY}
+                             L ${adjustedStartX} ${midY}
+                             L ${adjustedEndX} ${midY}
+                             L ${adjustedEndX} ${adjustedEndY}`;
+                    } else if ((startDirection === 'left' || startDirection === 'right') &&
+                               (endDirection === 'left' || endDirection === 'right')) {
+                        const midX = (adjustedStartX + adjustedEndX) / 2;
+                        d = `M ${adjustedStartX} ${adjustedStartY}
+                             L ${midX} ${adjustedStartY}
+                             L ${midX} ${adjustedEndY}
+                             L ${adjustedEndX} ${adjustedEndY}`;
+                    } else {
+                        const midX = (adjustedStartX + adjustedEndX) / 2;
+                        const midY = (adjustedStartY + adjustedEndY) / 2;
+                        d = `M ${adjustedStartX} ${adjustedStartY}
+                             L ${midX} ${midY}
+                             L ${adjustedEndX} ${adjustedEndY}`;
+                    }
+
+                    path.setAttribute('d', d);
+                    path.setAttribute('stroke', '#95a5a6');
+                    path.setAttribute('stroke-width', '2');
+                    path.setAttribute('fill', 'none');
+
+                    svgClone.appendChild(path);
+                }
+            });
+
+            tempContainer.insertBefore(svgClone, tempContainer.firstChild);
+
+            // 캔버스 생성
+            const canvas = await html2canvas(tempContainer, {
+                backgroundColor: '#ffffff',
+                scale: 2,
+                logging: false,
+                useCORS: true,
+                width: contentWidth,
+                height: contentHeight
+            });
+
+            // 임시 컨테이너 제거
+            document.body.removeChild(tempContainer);
 
             // 선택 복구
             if (wasSelected) {
