@@ -48,6 +48,11 @@ class OrgChartApp {
         this.versions = []; // 저장된 버전 목록
         this.nextVersionId = 1;
 
+        // 화면 줌
+        this.zoomLevel = 1; // 100%
+        this.minZoom = 0.25; // 25%
+        this.maxZoom = 2; // 200%
+
         this.initElements();
         this.initEventListeners();
         this.loadVersionsFromLocalStorage();
@@ -98,6 +103,11 @@ class OrgChartApp {
         // Version modal events
         document.getElementById('saveVersionBtn').addEventListener('click', () => this.saveCurrentVersion());
         document.getElementById('closeVersionBtn').addEventListener('click', () => this.hideVersionModal());
+
+        // Zoom controls
+        document.getElementById('zoomInBtn').addEventListener('click', () => this.zoomIn());
+        document.getElementById('zoomOutBtn').addEventListener('click', () => this.zoomOut());
+        document.getElementById('zoomResetBtn').addEventListener('click', () => this.zoomReset());
 
         // Context menu
         this.contextMenu.addEventListener('click', (e) => this.handleContextMenuClick(e));
@@ -1219,6 +1229,25 @@ class OrgChartApp {
             return;
         }
 
+        // Zoom 단축키
+        if (e.ctrlKey && (e.key === '+' || e.key === '=')) {
+            e.preventDefault();
+            this.zoomIn();
+            return;
+        }
+
+        if (e.ctrlKey && (e.key === '-' || e.key === '_')) {
+            e.preventDefault();
+            this.zoomOut();
+            return;
+        }
+
+        if (e.ctrlKey && e.key === '0') {
+            e.preventDefault();
+            this.zoomReset();
+            return;
+        }
+
         if (e.key === 'Escape') {
             this.hideModal();
             this.hideSpacingModal();
@@ -2117,6 +2146,41 @@ class OrgChartApp {
         } catch (e) {
             console.error('Failed to load versions:', e);
         }
+    }
+
+    // Zoom Functions
+    zoomIn() {
+        this.setZoom(this.zoomLevel + 0.1);
+    }
+
+    zoomOut() {
+        this.setZoom(this.zoomLevel - 0.1);
+    }
+
+    zoomReset() {
+        this.setZoom(1);
+    }
+
+    setZoom(level) {
+        // Clamp zoom level
+        this.zoomLevel = Math.max(this.minZoom, Math.min(this.maxZoom, level));
+
+        // Apply transform to chart and header
+        const transform = `scale(${this.zoomLevel})`;
+        this.orgChart.style.transform = transform;
+        this.orgChart.style.transformOrigin = 'top left';
+
+        const chartHeader = document.getElementById('chartHeader');
+        chartHeader.style.transform = transform;
+        chartHeader.style.transformOrigin = 'top left';
+
+        // Update zoom level display
+        const percentage = Math.round(this.zoomLevel * 100);
+        document.getElementById('zoomLevel').textContent = `${percentage}%`;
+
+        // Update background grid size
+        const gridSize = 20 * this.zoomLevel;
+        this.canvasContainer.style.backgroundSize = `${gridSize}px ${gridSize}px`;
     }
 
     // Utility
