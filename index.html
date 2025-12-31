@@ -11,15 +11,17 @@
         <header class="toolbar">
             <h1>조직도 생성기</h1>
             <div class="toolbar-actions">
-                <button id="undoBtn" class="btn btn-secondary" title="실행 취소 (Ctrl+Z)">↶ 실행 취소</button>
-                <button id="redoBtn" class="btn btn-secondary" title="다시 실행 (Ctrl+Y)">↷ 다시 실행</button>
-                <button id="addRootBtn" class="btn btn-primary">최상위 부서 추가</button>
-                <button id="autoLayoutBtn" class="btn btn-secondary">자동 배치</button>
-                <button id="groupSelectionBtn" class="btn btn-secondary">영역 선택</button>
-                <button id="spacingSettingsBtn" class="btn btn-secondary">간격 설정</button>
-                <button id="exportBtn" class="btn btn-secondary">이미지 저장</button>
-                <button id="saveDataBtn" class="btn btn-secondary">데이터 저장</button>
-                <button id="loadDataBtn" class="btn btn-secondary">데이터 불러오기</button>
+                <button id="undoBtn" class="btn btn-secondary" data-tooltip="이전 작업으로 되돌립니다 (Ctrl+Z)">↶ 실행 취소</button>
+                <button id="redoBtn" class="btn btn-secondary" data-tooltip="되돌린 작업을 다시 실행합니다 (Ctrl+Y)">↷ 다시 실행</button>
+                <button id="resetBtn" class="btn btn-secondary" data-tooltip="샘플 데이터로 조직도를 초기화합니다">🔄 초기화</button>
+                <button id="addRootBtn" class="btn btn-primary" data-tooltip="새로운 최상위 부서를 추가합니다">최상위 부서 추가</button>
+                <button id="autoLayoutBtn" class="btn btn-secondary" data-tooltip="모든 노드를 자동으로 정렬합니다">자동 배치</button>
+                <button id="groupSelectionBtn" class="btn btn-secondary" data-tooltip="여러 노드를 선택하여 그룹으로 묶습니다">영역 선택</button>
+                <button id="spacingSettingsBtn" class="btn btn-secondary" data-tooltip="노드 간 간격을 조정합니다">간격 설정</button>
+                <button id="versionBtn" class="btn btn-secondary" data-tooltip="저장된 버전을 관리하고 복원합니다">버전 관리</button>
+                <button id="exportBtn" class="btn btn-secondary" data-tooltip="조직도를 PNG 이미지로 저장합니다">이미지 저장</button>
+                <button id="saveDataBtn" class="btn btn-secondary" data-tooltip="현재 조직도를 JSON 파일로 저장합니다">데이터 저장</button>
+                <button id="loadDataBtn" class="btn btn-secondary" data-tooltip="JSON 파일에서 조직도를 불러옵니다">데이터 불러오기</button>
             </div>
         </header>
 
@@ -108,6 +110,23 @@
                         <button type="button" id="cancelSpacingBtn" class="btn btn-secondary">취소</button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- 버전 관리 모달 -->
+        <div id="versionModal" class="modal hidden">
+            <div class="modal-content version-modal-content">
+                <h2>버전 관리</h2>
+                <div class="version-controls">
+                    <input type="text" id="versionName" placeholder="버전 이름 입력 (예: v1.0, 초안)" />
+                    <button id="saveVersionBtn" class="btn btn-primary">현재 버전 저장</button>
+                </div>
+                <div id="versionsList" class="versions-list">
+                    <!-- 버전 목록이 동적으로 추가됨 -->
+                </div>
+                <div class="form-actions">
+                    <button type="button" id="closeVersionBtn" class="btn btn-secondary">닫기</button>
+                </div>
             </div>
         </div>
 

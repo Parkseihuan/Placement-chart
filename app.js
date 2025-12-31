@@ -44,8 +44,13 @@ class OrgChartApp {
         this.horizontalSpacing = 120; // 수평 간격 (형제 노드)
         this.verticalSpacing = 100; // 수직 간격 (부모-자식)
 
+        // 버전 관리
+        this.versions = []; // 저장된 버전 목록
+        this.nextVersionId = 1;
+
         this.initElements();
         this.initEventListeners();
+        this.loadVersionsFromLocalStorage();
         this.loadFromLocalStorage();
         this.saveState(); // 초기 상태 저장
     }
@@ -58,6 +63,7 @@ class OrgChartApp {
         this.nodeForm = document.getElementById('nodeForm');
         this.spacingModal = document.getElementById('spacingModal');
         this.spacingForm = document.getElementById('spacingForm');
+        this.versionModal = document.getElementById('versionModal');
         this.contextMenu = document.getElementById('contextMenu');
         this.modalTitle = document.getElementById('modalTitle');
         this.fileInput = document.getElementById('fileInput');
@@ -67,10 +73,12 @@ class OrgChartApp {
         // Toolbar buttons
         document.getElementById('undoBtn').addEventListener('click', () => this.undo());
         document.getElementById('redoBtn').addEventListener('click', () => this.redo());
+        document.getElementById('resetBtn').addEventListener('click', () => this.resetToSample());
         document.getElementById('addRootBtn').addEventListener('click', () => this.showAddNodeModal());
         document.getElementById('autoLayoutBtn').addEventListener('click', () => this.autoLayout());
         document.getElementById('groupSelectionBtn').addEventListener('click', () => this.toggleSelectionMode());
         document.getElementById('spacingSettingsBtn').addEventListener('click', () => this.showSpacingModal());
+        document.getElementById('versionBtn').addEventListener('click', () => this.showVersionModal());
         document.getElementById('exportBtn').addEventListener('click', () => this.exportAsImage());
         document.getElementById('saveDataBtn').addEventListener('click', () => this.saveToFile());
         document.getElementById('loadDataBtn').addEventListener('click', () => this.fileInput.click());
@@ -86,6 +94,10 @@ class OrgChartApp {
         // Spacing modal events
         this.spacingForm.addEventListener('submit', (e) => this.handleSpacingFormSubmit(e));
         document.getElementById('cancelSpacingBtn').addEventListener('click', () => this.hideSpacingModal());
+
+        // Version modal events
+        document.getElementById('saveVersionBtn').addEventListener('click', () => this.saveCurrentVersion());
+        document.getElementById('closeVersionBtn').addEventListener('click', () => this.hideVersionModal());
 
         // Context menu
         this.contextMenu.addEventListener('click', (e) => this.handleContextMenuClick(e));
@@ -1210,6 +1222,7 @@ class OrgChartApp {
         if (e.key === 'Escape') {
             this.hideModal();
             this.hideSpacingModal();
+            this.hideVersionModal();
             this.hideContextMenu();
             this.deselectAll();
         }
@@ -1838,6 +1851,271 @@ class OrgChartApp {
         } catch (error) {
             console.error('이미지 저장 오류:', error);
             alert('이미지 저장 중 오류가 발생했습니다.\n브라우저의 인쇄 기능(Ctrl+P)을 이용하거나\n스크린샷을 활용해주세요.');
+        }
+    }
+
+    // Reset to Sample Data
+    resetToSample() {
+        if (this.nodes.size > 0) {
+            if (!confirm('현재 조직도를 삭제하고 샘플 데이터로 초기화하시겠습니까?\n\n※ 이 작업은 되돌릴 수 없습니다.')) {
+                return;
+            }
+        }
+
+        // Clear existing
+        this.orgChart.innerHTML = '';
+        this.nodes.clear();
+        this.nextId = 1;
+
+        // Sample data
+        const sampleData = this.getSampleData();
+
+        // Create nodes
+        sampleData.nodes.forEach(nodeData => {
+            const node = {
+                id: `node-${this.nextId++}`,
+                deptName: nodeData.deptName,
+                members: nodeData.members || [],
+                parentId: nodeData.parentId,
+                isIndependent: nodeData.isIndependent || false,
+                layoutDirection: nodeData.layoutDirection || 'vertical',
+                locked: false,
+                connectionStart: 'bottom',
+                connectionEnd: 'top',
+                x: nodeData.x,
+                y: nodeData.y
+            };
+            this.nodes.set(node.id, node);
+            this.renderNode(node);
+        });
+
+        // Update parent IDs
+        const nodeArray = Array.from(this.nodes.values());
+        sampleData.nodes.forEach((nodeData, index) => {
+            if (nodeData.parentIndex !== undefined && nodeData.parentIndex !== null) {
+                nodeArray[index].parentId = nodeArray[nodeData.parentIndex].id;
+            }
+        });
+
+        this.updateConnections();
+        this.saveState();
+        this.saveToLocalStorage();
+
+        alert('샘플 데이터로 초기화되었습니다.');
+    }
+
+    getSampleData() {
+        return {
+            nodes: [
+                // 0: 대표이사
+                { deptName: '대표이사', members: [{ position: '대표이사', name: '김철수' }], x: 1000, y: 120, parentIndex: null },
+
+                // 1-3: 본부장
+                { deptName: '경영지원본부', members: [{ position: '본부장', name: '이영희' }], x: 300, y: 250, parentIndex: 0 },
+                { deptName: '개발본부', members: [{ position: '본부장', name: '한상우' }], x: 1000, y: 250, parentIndex: 0 },
+                { deptName: '영업본부', members: [{ position: '본부장', name: '문정호' }], x: 1700, y: 250, parentIndex: 0 },
+
+                // 4-6: 경영지원본부 팀
+                { deptName: '인사팀', members: [{ position: '팀장', name: '박민수' }, { position: '주임', name: '정수진' }], x: 100, y: 380, parentIndex: 1 },
+                { deptName: '재무팀', members: [{ position: '팀장', name: '강지훈' }, { position: '과장', name: '윤서연' }], x: 300, y: 380, parentIndex: 1 },
+                { deptName: 'QA팀', members: [{ position: '팀장', name: '황예린' }], x: 500, y: 380, parentIndex: 1 },
+
+                // 7-9: 개발본부 팀
+                { deptName: '프론트엔드팀', members: [{ position: '팀장', name: '오지원' }, { position: '시니어개발자', name: '신진아' }], x: 800, y: 380, parentIndex: 2 },
+                { deptName: '백엔드팀', members: [{ position: '팀장', name: '장민정' }, { position: '시니어개발자', name: '조은우' }], x: 1000, y: 380, parentIndex: 2 },
+                { deptName: '국내영업팀', members: [{ position: '팀장', name: '송하늘' }, { position: '과장', name: '안지수' }], x: 1600, y: 380, parentIndex: 3 },
+                { deptName: '해외영업팀', members: [{ position: '팀장', name: '안수빈' }], x: 1800, y: 380, parentIndex: 3 }
+            ]
+        };
+    }
+
+    // Version Management
+    showVersionModal() {
+        this.renderVersionsList();
+        this.versionModal.classList.remove('hidden');
+        document.getElementById('versionName').focus();
+    }
+
+    hideVersionModal() {
+        this.versionModal.classList.add('hidden');
+        document.getElementById('versionName').value = '';
+    }
+
+    saveCurrentVersion() {
+        const versionName = document.getElementById('versionName').value.trim();
+        if (!versionName) {
+            alert('버전 이름을 입력해주세요.');
+            return;
+        }
+
+        const version = {
+            id: `version-${this.nextVersionId++}`,
+            name: versionName,
+            timestamp: new Date().toISOString(),
+            data: {
+                nodes: Array.from(this.nodes.values()).map(node => ({...node})),
+                nextId: this.nextId,
+                chartTitle: this.chartTitle,
+                chartDate: this.chartDate,
+                chartTitlePos: {...this.chartTitlePos},
+                chartDatePos: {...this.chartDatePos},
+                nodeGroups: JSON.parse(JSON.stringify(this.nodeGroups)),
+                nextGroupId: this.nextGroupId,
+                horizontalSpacing: this.horizontalSpacing,
+                verticalSpacing: this.verticalSpacing
+            }
+        };
+
+        this.versions.push(version);
+        this.saveVersionsToLocalStorage();
+        this.renderVersionsList();
+
+        document.getElementById('versionName').value = '';
+        alert(`버전 "${versionName}"이(가) 저장되었습니다.`);
+    }
+
+    renderVersionsList() {
+        const versionsList = document.getElementById('versionsList');
+
+        if (this.versions.length === 0) {
+            versionsList.innerHTML = '<div class="versions-empty">저장된 버전이 없습니다.</div>';
+            return;
+        }
+
+        versionsList.innerHTML = this.versions.map(version => {
+            const date = new Date(version.timestamp);
+            const dateStr = date.toLocaleString('ko-KR');
+
+            return `
+                <div class="version-item" data-version-id="${version.id}">
+                    <div class="version-info">
+                        <div class="version-name">${this.escapeHtml(version.name)}</div>
+                        <div class="version-date">${dateStr}</div>
+                    </div>
+                    <div class="version-actions">
+                        <button class="btn btn-primary" onclick="window.orgChartApp.restoreVersion('${version.id}')">복원</button>
+                        <button class="btn btn-secondary" onclick="window.orgChartApp.deleteVersion('${version.id}')">삭제</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    restoreVersion(versionId) {
+        const version = this.versions.find(v => v.id === versionId);
+        if (!version) return;
+
+        if (!confirm(`"${version.name}" 버전으로 복원하시겠습니까?\n\n※ 현재 작업 내용은 저장되지 않습니다.`)) {
+            return;
+        }
+
+        const data = version.data;
+
+        // Clear existing
+        this.orgChart.innerHTML = '';
+        this.nodes.clear();
+
+        this.nextId = data.nextId || 1;
+
+        // Restore header info
+        if (data.chartTitle) {
+            this.chartTitle = data.chartTitle;
+            document.getElementById('chartTitle').textContent = data.chartTitle;
+        }
+        if (data.chartDate) {
+            this.chartDate = data.chartDate;
+            document.getElementById('chartDate').textContent = data.chartDate;
+        }
+
+        // Restore header positions
+        if (data.chartTitlePos) {
+            this.chartTitlePos = data.chartTitlePos;
+            const titleEl = document.getElementById('chartTitle');
+            titleEl.style.left = `${this.chartTitlePos.x}px`;
+            titleEl.style.top = `${this.chartTitlePos.y}px`;
+        }
+        if (data.chartDatePos) {
+            this.chartDatePos = data.chartDatePos;
+            const dateEl = document.getElementById('chartDate');
+            if (this.chartDatePos.x !== null) {
+                dateEl.style.right = `${this.chartDatePos.x}px`;
+            }
+            dateEl.style.top = `${this.chartDatePos.y}px`;
+        }
+
+        // Recreate nodes
+        data.nodes.forEach(nodeData => {
+            const node = {...nodeData};
+            this.nodes.set(node.id, node);
+            this.renderNode(node);
+        });
+
+        this.updateConnections();
+
+        // Restore groups
+        if (data.nodeGroups) {
+            this.nodeGroups = JSON.parse(JSON.stringify(data.nodeGroups));
+            this.nextGroupId = data.nextGroupId || 1;
+
+            this.nodeGroups.forEach(group => {
+                group.nodeIds.forEach(nodeId => {
+                    const element = document.getElementById(nodeId);
+                    if (element) {
+                        element.classList.add('in-group');
+                        element.dataset.groupId = group.id;
+                    }
+                });
+            });
+        }
+
+        // Restore spacing
+        if (data.horizontalSpacing !== undefined) {
+            this.horizontalSpacing = data.horizontalSpacing;
+        }
+        if (data.verticalSpacing !== undefined) {
+            this.verticalSpacing = data.verticalSpacing;
+        }
+
+        this.saveState();
+        this.saveToLocalStorage();
+        this.hideVersionModal();
+
+        alert(`"${version.name}" 버전이 복원되었습니다.`);
+    }
+
+    deleteVersion(versionId) {
+        const version = this.versions.find(v => v.id === versionId);
+        if (!version) return;
+
+        if (!confirm(`"${version.name}" 버전을 삭제하시겠습니까?`)) {
+            return;
+        }
+
+        const index = this.versions.findIndex(v => v.id === versionId);
+        this.versions.splice(index, 1);
+        this.saveVersionsToLocalStorage();
+        this.renderVersionsList();
+
+        alert('버전이 삭제되었습니다.');
+    }
+
+    saveVersionsToLocalStorage() {
+        localStorage.setItem('orgChartVersions', JSON.stringify({
+            versions: this.versions,
+            nextVersionId: this.nextVersionId
+        }));
+    }
+
+    loadVersionsFromLocalStorage() {
+        const saved = localStorage.getItem('orgChartVersions');
+        if (!saved) return;
+
+        try {
+            const data = JSON.parse(saved);
+            this.versions = data.versions || [];
+            this.nextVersionId = data.nextVersionId || 1;
+        } catch (e) {
+            console.error('Failed to load versions:', e);
         }
     }
 
