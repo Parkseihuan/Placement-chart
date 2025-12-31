@@ -163,11 +163,14 @@ body {
     border-radius: 8px;
     min-width: 150px;
     max-width: 300px;
+    min-height: 45px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     cursor: move;
     user-select: none;
     z-index: 10;
     transition: box-shadow 0.2s ease, transform 0.1s ease;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Independent Node (독립 노드 - 연결선 없음) */
@@ -214,10 +217,19 @@ body {
     font-size: 14px;
     border-radius: 6px 6px 0 0;
     text-align: center;
+    flex-shrink: 0;
+}
+
+/* 직원이 없는 노드의 헤더는 모든 모서리 둥글게 */
+.org-node.no-members .node-header {
+    border-radius: 6px;
 }
 
 .node-body {
     padding: 8px;
+    background: white;
+    flex: 1;
+    min-height: 0;
 }
 
 /* Member Items */
@@ -256,7 +268,7 @@ body {
     flex-wrap: wrap;
     gap: 8px;
     padding: 12px;
-    background: #fafafa;
+    background: white;
 }
 
 .org-node.layout-horizontal .member-item {

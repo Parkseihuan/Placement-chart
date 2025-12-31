@@ -171,7 +171,8 @@ class OrgChartApp {
 
         // 여러 직원 목록 생성
         let bodyHtml = '';
-        if (node.members && node.members.length > 0) {
+        const hasMembers = node.members && node.members.length > 0;
+        if (hasMembers) {
             const membersHtml = node.members.map(member => `
                 <div class="member-item">
                     <span class="member-position">${this.escapeHtml(member.position)}</span>
@@ -179,6 +180,9 @@ class OrgChartApp {
                 </div>
             `).join('');
             bodyHtml = `<div class="node-body">${membersHtml}</div>`;
+        } else {
+            // 직원이 없는 노드에 클래스 추가
+            element.classList.add('no-members');
         }
         // 직원이 없으면 node-body를 아예 렌더링하지 않음
 
@@ -218,8 +222,9 @@ class OrgChartApp {
 
         // 멤버 목록 업데이트
         let nodeBody = element.querySelector('.node-body');
+        const hasMembers = node.members && node.members.length > 0;
 
-        if (node.members && node.members.length > 0) {
+        if (hasMembers) {
             const membersHtml = node.members.map(member => `
                 <div class="member-item">
                     <span class="member-position">${this.escapeHtml(member.position)}</span>
@@ -234,11 +239,15 @@ class OrgChartApp {
             } else {
                 nodeBody.innerHTML = membersHtml;
             }
+            // no-members 클래스 제거
+            element.classList.remove('no-members');
         } else {
             // 직원이 없으면 node-body 제거
             if (nodeBody) {
                 nodeBody.remove();
             }
+            // no-members 클래스 추가
+            element.classList.add('no-members');
         }
 
         // 연결점이 없으면 추가 (업데이트 시 사라질 수 있음)
