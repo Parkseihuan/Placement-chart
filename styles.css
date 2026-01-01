@@ -256,6 +256,8 @@ body {
     user-select: none;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     color: #1e293b;
+    white-space: nowrap;
+    min-width: fit-content;
 }
 
 .chart-title.editing, .chart-date.editing {

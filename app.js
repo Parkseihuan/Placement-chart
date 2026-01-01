@@ -1737,21 +1737,29 @@ class OrgChartApp {
             });
 
             // 헤더 복제
-            if (chartTitle) {
+            const chartTitle = document.getElementById('chartTitle');
+            const chartDate = document.getElementById('chartDate');
+
+            if (chartTitle && this.chartTitle) {
                 const titleClone = chartTitle.cloneNode(true);
                 titleClone.style.position = 'absolute';
-                titleClone.style.left = `${this.chartTitlePos.x - minX}px`;
-                titleClone.style.top = `${this.chartTitlePos.y - minY}px`;
+                titleClone.style.left = `${this.chartTitlePos.x}px`;
+                titleClone.style.top = `${this.chartTitlePos.y}px`;
+                titleClone.style.right = 'auto';
+                titleClone.style.whiteSpace = 'nowrap';
+                titleClone.style.minWidth = 'fit-content';
                 titleClone.classList.remove('editing');
                 tempContainer.appendChild(titleClone);
             }
 
-            if (chartDate) {
+            if (chartDate && this.chartDate) {
                 const dateClone = chartDate.cloneNode(true);
                 dateClone.style.position = 'absolute';
-                const dateX = this.orgChart.offsetWidth - this.chartDatePos.x - chartDate.offsetWidth;
-                dateClone.style.left = `${dateX - minX}px`;
-                dateClone.style.top = `${this.chartDatePos.y - minY}px`;
+                dateClone.style.right = '100px';
+                dateClone.style.top = `${this.chartDatePos.y}px`;
+                dateClone.style.left = 'auto';
+                dateClone.style.whiteSpace = 'nowrap';
+                dateClone.style.minWidth = 'fit-content';
                 dateClone.classList.remove('editing');
                 tempContainer.appendChild(dateClone);
             }
@@ -1918,6 +1926,10 @@ class OrgChartApp {
         });
 
         this.updateConnections();
+
+        // Reset zoom level
+        this.zoomReset();
+
         this.saveState();
         this.saveToLocalStorage();
 
@@ -2168,7 +2180,7 @@ class OrgChartApp {
         // Clamp zoom level
         this.zoomLevel = Math.max(this.minZoom, Math.min(this.maxZoom, level));
 
-        // Apply transform to chart and header
+        // Apply transform to chart, header, and connections
         const transform = `scale(${this.zoomLevel})`;
         this.orgChart.style.transform = transform;
         this.orgChart.style.transformOrigin = 'top left';
@@ -2176,6 +2188,11 @@ class OrgChartApp {
         const chartHeader = document.getElementById('chartHeader');
         chartHeader.style.transform = transform;
         chartHeader.style.transformOrigin = 'top left';
+
+        // Apply transform to connections SVG
+        const connections = document.getElementById('connections');
+        connections.style.transform = transform;
+        connections.style.transformOrigin = 'top left';
 
         // Update zoom level display
         const percentage = Math.round(this.zoomLevel * 100);
