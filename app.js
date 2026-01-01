@@ -124,6 +124,9 @@ class OrgChartApp {
         // Canvas panning (화면 이동)
         this.canvasContainer.addEventListener('mousedown', (e) => this.handleCanvasMouseDown(e));
 
+        // Mouse wheel zoom
+        this.canvasContainer.addEventListener('wheel', (e) => this.handleMouseWheel(e));
+
         // Chart header events
         const chartTitleEl = document.getElementById('chartTitle');
         const chartDateEl = document.getElementById('chartDate');
@@ -241,6 +244,20 @@ class OrgChartApp {
 
         // 헤더 업데이트
         element.querySelector('.node-header').textContent = node.deptName;
+
+        // 레이아웃 방향 클래스 업데이트
+        if (node.layoutDirection === 'horizontal') {
+            element.classList.add('layout-horizontal');
+        } else {
+            element.classList.remove('layout-horizontal');
+        }
+
+        // 독립 노드 클래스 업데이트
+        if (node.isIndependent) {
+            element.classList.add('independent-node');
+        } else {
+            element.classList.remove('independent-node');
+        }
 
         // 멤버 목록 업데이트
         let nodeBody = element.querySelector('.node-body');
@@ -1035,18 +1052,25 @@ class OrgChartApp {
 
             this.createNode(data);
         } else if (mode === 'add-child') {
-            // 하위 부서 추가: 부모의 바로 아래 중앙에 배치
+            // 하위 부서 추가: 부모의 바로 아래에 배치
             const parentId = this.nodeForm.dataset.parentNodeId;
             const parent = this.nodes.get(parentId);
             const siblings = this.getChildren(parentId);
 
-            // 부모 아래 중앙에 배치
-            let x = parent.x;
-            let y = parent.y + this.verticalSpacing;
+            let x, y;
+            y = parent.y + this.verticalSpacing;
 
-            // 이미 자식이 있으면 옆으로 배치
-            if (siblings.length > 0) {
-                x = parent.x + siblings.length * this.horizontalSpacing;
+            if (siblings.length === 0) {
+                // 첫 번째 자식: 부모 중앙 아래에 배치
+                const parentElement = document.getElementById(parentId);
+                const parentWidth = parentElement ? parentElement.offsetWidth : 150;
+                x = parent.x + (parentWidth / 2) - 75; // 75는 대략적인 노드 너비의 절반
+            } else {
+                // 기존 자식들이 있으면 마지막 자식의 오른쪽에 배치
+                const lastSibling = siblings[siblings.length - 1];
+                const lastElement = document.getElementById(lastSibling.id);
+                const lastWidth = lastElement ? lastElement.offsetWidth : 150;
+                x = lastSibling.x + lastWidth + 30; // 30px 간격
             }
 
             data.parentId = parentId;
@@ -1684,63 +1708,11 @@ class OrgChartApp {
             const wasSelected = this.selectedNode;
             this.deselectAll();
 
-            // 모든 노드의 범위 계산
-            let minX = Infinity, minY = Infinity;
-            let maxX = -Infinity, maxY = -Infinity;
-
-            this.nodes.forEach(node => {
-                const element = document.getElementById(node.id);
-                if (element) {
-                    const width = element.offsetWidth;
-                    const height = element.offsetHeight;
-                    minX = Math.min(minX, node.x);
-                    minY = Math.min(minY, node.y);
-                    maxX = Math.max(maxX, node.x + width);
-                    maxY = Math.max(maxY, node.y + height);
-                }
-            });
-
-            // 헤더 위치도 고려
-            const chartTitle = document.getElementById('chartTitle');
-            const chartDate = document.getElementById('chartDate');
-
-            if (chartTitle) {
-                const titleRect = chartTitle.getBoundingClientRect();
-                const titleX = this.chartTitlePos.x;
-                const titleY = this.chartTitlePos.y;
-                minX = Math.min(minX, titleX);
-                minY = Math.min(minY, titleY);
-                maxX = Math.max(maxX, titleX + titleRect.width);
-                maxY = Math.max(maxY, titleY + titleRect.height);
-            }
-
-            if (chartDate) {
-                const dateRect = chartDate.getBoundingClientRect();
-                const dateX = this.orgChart.offsetWidth - this.chartDatePos.x - dateRect.width;
-                const dateY = this.chartDatePos.y;
-                minX = Math.min(minX, dateX);
-                minY = Math.min(minY, dateY);
-                maxX = Math.max(maxX, dateX + dateRect.width);
-                maxY = Math.max(maxY, dateY + dateRect.height);
-            }
-
-            // 노드가 없는 경우 기본값
-            if (!isFinite(minX) || this.nodes.size === 0) {
-                minX = 0;
-                minY = 0;
-                maxX = 800;
-                maxY = 600;
-            }
-
-            // 여백 추가
-            const padding = 50;
-            minX = Math.max(0, minX - padding);
-            minY = Math.max(0, minY - padding);
-            maxX = maxX + padding;
-            maxY = maxY + padding;
-
-            const contentWidth = maxX - minX;
-            const contentHeight = maxY - minY;
+            // A3 landscape 전체 크기로 export (2100 x 1500px)
+            const contentWidth = 2100;
+            const contentHeight = 1500;
+            const minX = 0;
+            const minY = 0;
 
             // 임시 컨테이너 생성
             const tempContainer = document.createElement('div');
@@ -1839,7 +1811,7 @@ class OrgChartApp {
                     }
 
                     path.setAttribute('d', d);
-                    path.setAttribute('stroke', '#95a5a6');
+                    path.setAttribute('stroke', '#cbd5e1');
                     path.setAttribute('stroke-width', '2');
                     path.setAttribute('fill', 'none');
 
@@ -1895,6 +1867,25 @@ class OrgChartApp {
         this.orgChart.innerHTML = '';
         this.nodes.clear();
         this.nextId = 1;
+
+        // Reset headers
+        this.chartTitle = '용인대학교 교직원 배치표';
+        this.chartDate = '2024. 2. 8. 현재';
+        this.chartTitlePos = { x: 100, y: 20 };
+        this.chartDatePos = { x: null, y: 20 };
+
+        // Update header elements
+        const chartTitleEl = document.getElementById('chartTitle');
+        const chartDateEl = document.getElementById('chartDate');
+
+        chartTitleEl.textContent = this.chartTitle;
+        chartDateEl.textContent = this.chartDate;
+        chartTitleEl.style.left = `${this.chartTitlePos.x}px`;
+        chartTitleEl.style.top = `${this.chartTitlePos.y}px`;
+        chartTitleEl.style.right = 'auto';
+        chartDateEl.style.right = '100px';
+        chartDateEl.style.top = `${this.chartDatePos.y}px`;
+        chartDateEl.style.left = 'auto';
 
         // Sample data
         const sampleData = this.getSampleData();
@@ -2149,6 +2140,18 @@ class OrgChartApp {
     }
 
     // Zoom Functions
+    handleMouseWheel(e) {
+        // Ctrl + wheel for zoom
+        if (e.ctrlKey) {
+            e.preventDefault();
+
+            // deltaY > 0 means scrolling down (zoom out)
+            // deltaY < 0 means scrolling up (zoom in)
+            const zoomDelta = e.deltaY > 0 ? -0.1 : 0.1;
+            this.setZoom(this.zoomLevel + zoomDelta);
+        }
+    }
+
     zoomIn() {
         this.setZoom(this.zoomLevel + 0.1);
     }
