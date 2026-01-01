@@ -43,6 +43,7 @@ class OrgChartApp {
         // 노드 간격 설정
         this.horizontalSpacing = 120; // 수평 간격 (형제 노드)
         this.verticalSpacing = 100; // 수직 간격 (부모-자식)
+        this.memberGap = 4; // 직원 정보 간격 (직급-이름)
 
         // 버전 관리
         this.versions = []; // 저장된 버전 목록
@@ -950,6 +951,7 @@ class OrgChartApp {
     showSpacingModal() {
         document.getElementById('horizontalSpacing').value = this.horizontalSpacing;
         document.getElementById('verticalSpacing').value = this.verticalSpacing;
+        document.getElementById('memberGap').value = this.memberGap;
         this.spacingModal.classList.remove('hidden');
         document.getElementById('horizontalSpacing').focus();
     }
@@ -964,11 +966,34 @@ class OrgChartApp {
 
         this.horizontalSpacing = parseInt(document.getElementById('horizontalSpacing').value);
         this.verticalSpacing = parseInt(document.getElementById('verticalSpacing').value);
+        this.memberGap = parseInt(document.getElementById('memberGap').value);
+
+        // Apply member gap to all nodes dynamically
+        this.applyMemberGap();
 
         this.hideSpacingModal();
         this.saveToLocalStorage();
 
-        alert(`간격이 설정되었습니다.\n수평: ${this.horizontalSpacing}px, 수직: ${this.verticalSpacing}px\n\n자동 배치를 클릭하여 적용하세요.`);
+        alert(`간격이 설정되었습니다.\n수평: ${this.horizontalSpacing}px, 수직: ${this.verticalSpacing}px, 직원 정보: ${this.memberGap}px\n\n자동 배치를 클릭하여 노드 간격을 적용하세요.`);
+    }
+
+    applyMemberGap() {
+        // Apply gap to all member items dynamically
+        const style = document.createElement('style');
+        style.id = 'member-gap-style';
+
+        // Remove existing style if any
+        const existingStyle = document.getElementById('member-gap-style');
+        if (existingStyle) {
+            existingStyle.remove();
+        }
+
+        style.textContent = `
+            .member-item {
+                gap: ${this.memberGap}px !important;
+            }
+        `;
+        document.head.appendChild(style);
     }
 
     // Member Management
@@ -1467,7 +1492,8 @@ class OrgChartApp {
             nodeGroups: this.nodeGroups,
             nextGroupId: this.nextGroupId,
             horizontalSpacing: this.horizontalSpacing,
-            verticalSpacing: this.verticalSpacing
+            verticalSpacing: this.verticalSpacing,
+            memberGap: this.memberGap
         };
         localStorage.setItem('orgChartData', JSON.stringify(data));
     }
@@ -1560,6 +1586,10 @@ class OrgChartApp {
             }
             if (data.verticalSpacing !== undefined) {
                 this.verticalSpacing = data.verticalSpacing;
+            }
+            if (data.memberGap !== undefined) {
+                this.memberGap = data.memberGap;
+                this.applyMemberGap();
             }
         } catch (e) {
             console.error('Failed to load data:', e);
@@ -1940,23 +1970,23 @@ class OrgChartApp {
         return {
             nodes: [
                 // 0: 대표이사
-                { deptName: '대표이사', members: [{ position: '대표이사', name: '김철수' }], x: 1000, y: 120, parentIndex: null },
+                { deptName: '대표이사', members: [{ position: '대표이사', name: '김철수' }], x: 950, y: 100, parentIndex: null },
 
                 // 1-3: 본부장
-                { deptName: '경영지원본부', members: [{ position: '본부장', name: '이영희' }], x: 300, y: 250, parentIndex: 0 },
-                { deptName: '개발본부', members: [{ position: '본부장', name: '한상우' }], x: 1000, y: 250, parentIndex: 0 },
-                { deptName: '영업본부', members: [{ position: '본부장', name: '문정호' }], x: 1700, y: 250, parentIndex: 0 },
+                { deptName: '경영지원본부', members: [{ position: '본부장', name: '이영희' }], x: 350, y: 260, parentIndex: 0 },
+                { deptName: '개발본부', members: [{ position: '본부장', name: '한상우' }], x: 950, y: 260, parentIndex: 0 },
+                { deptName: '영업본부', members: [{ position: '본부장', name: '문정호' }], x: 1550, y: 260, parentIndex: 0 },
 
                 // 4-6: 경영지원본부 팀
-                { deptName: '인사팀', members: [{ position: '팀장', name: '박민수' }, { position: '주임', name: '정수진' }], x: 100, y: 380, parentIndex: 1 },
-                { deptName: '재무팀', members: [{ position: '팀장', name: '강지훈' }, { position: '과장', name: '윤서연' }], x: 300, y: 380, parentIndex: 1 },
-                { deptName: 'QA팀', members: [{ position: '팀장', name: '황예린' }], x: 500, y: 380, parentIndex: 1 },
+                { deptName: '인사팀', members: [{ position: '팀장', name: '박민수' }, { position: '주임', name: '정수진' }], x: 150, y: 420, parentIndex: 1 },
+                { deptName: '재무팀', members: [{ position: '팀장', name: '강지훈' }, { position: '과장', name: '윤서연' }], x: 350, y: 420, parentIndex: 1 },
+                { deptName: 'QA팀', members: [{ position: '팀장', name: '황예린' }], x: 550, y: 420, parentIndex: 1 },
 
                 // 7-9: 개발본부 팀
-                { deptName: '프론트엔드팀', members: [{ position: '팀장', name: '오지원' }, { position: '시니어개발자', name: '신진아' }], x: 800, y: 380, parentIndex: 2 },
-                { deptName: '백엔드팀', members: [{ position: '팀장', name: '장민정' }, { position: '시니어개발자', name: '조은우' }], x: 1000, y: 380, parentIndex: 2 },
-                { deptName: '국내영업팀', members: [{ position: '팀장', name: '송하늘' }, { position: '과장', name: '안지수' }], x: 1600, y: 380, parentIndex: 3 },
-                { deptName: '해외영업팀', members: [{ position: '팀장', name: '안수빈' }], x: 1800, y: 380, parentIndex: 3 }
+                { deptName: '프론트엔드팀', members: [{ position: '팀장', name: '오지원' }, { position: '시니어개발자', name: '신진아' }], x: 750, y: 420, parentIndex: 2 },
+                { deptName: '백엔드팀', members: [{ position: '팀장', name: '장민정' }, { position: '시니어개발자', name: '조은우' }], x: 950, y: 420, parentIndex: 2 },
+                { deptName: '국내영업팀', members: [{ position: '팀장', name: '송하늘' }, { position: '과장', name: '안지수' }], x: 1350, y: 420, parentIndex: 3 },
+                { deptName: '해외영업팀', members: [{ position: '팀장', name: '안수빈' }], x: 1550, y: 420, parentIndex: 3 }
             ]
         };
     }

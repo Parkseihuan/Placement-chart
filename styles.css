@@ -240,7 +240,7 @@ body {
 .chart-header {
     position: relative;
     z-index: 100;
-    pointer-events: none;
+    pointer-events: auto;
 }
 
 .chart-title, .chart-date {
@@ -386,7 +386,7 @@ body {
     padding: 8px 12px;
     border-bottom: 1px solid #f1f5f9;
     display: flex;
-    gap: 8px;
+    gap: 4px;
     align-items: center;
     font-size: 13px;
     transition: background 0.2s ease;
