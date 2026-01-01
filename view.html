@@ -73,17 +73,15 @@
                 </div>
             </div>
             <div class="toolbar-actions">
+                <button id="zoomOutBtn" class="btn btn-secondary" data-tooltip="축소 (Ctrl -)">🔍-</button>
+                <span id="zoomLevel" style="display: inline-block; min-width: 60px; text-align: center; font-weight: 600; color: #475569;">100%</span>
+                <button id="zoomInBtn" class="btn btn-secondary" data-tooltip="확대 (Ctrl +)">🔍+</button>
+                <button id="zoomResetBtn" class="btn btn-secondary" data-tooltip="원래 크기 (Ctrl 0)">⟲</button>
                 <button id="exportBtn" class="btn btn-primary" data-tooltip="조직도를 PNG 이미지로 저장합니다">📥 이미지 저장</button>
             </div>
         </header>
 
         <main class="canvas-container">
-            <div class="zoom-controls">
-                <button id="zoomInBtn" class="zoom-btn" data-tooltip="확대 (Ctrl +)">+</button>
-                <span id="zoomLevel" class="zoom-level">100%</span>
-                <button id="zoomOutBtn" class="zoom-btn" data-tooltip="축소 (Ctrl -)">-</button>
-                <button id="zoomResetBtn" class="zoom-btn" data-tooltip="원래 크기 (Ctrl 0)">⟲</button>
-            </div>
             <div id="chartHeader" class="chart-header">
                 <div id="chartTitle" class="chart-title">용인대학교 교직원 배치표</div>
                 <div id="chartDate" class="chart-date">2024. 2. 8. 현재</div>
@@ -91,9 +89,6 @@
             <svg id="connections"></svg>
             <div id="orgChart"></div>
         </main>
-
-        <div class="view-mode-badge">👁️ 보기 모드</div>
-        <a href="index.html" class="admin-link">🔧 관리자 모드로 전환</a>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>

@@ -19,8 +19,8 @@ class OrgChartViewer {
         this.maxZoom = 2;
         this.zoomLevel = 1;
 
-        // 직원 정보 간격
-        this.memberGap = 4;
+        // 직원 항목 간격
+        this.memberGap = 8;
 
         // Initialize
         this.initEventListeners();
@@ -225,7 +225,7 @@ class OrgChartViewer {
 
         style.textContent = `
             .member-item {
-                gap: ${this.memberGap}px !important;
+                padding: ${this.memberGap}px 12px !important;
             }
         `;
         document.head.appendChild(style);

@@ -43,7 +43,7 @@ class OrgChartApp {
         // 노드 간격 설정
         this.horizontalSpacing = 120; // 수평 간격 (형제 노드)
         this.verticalSpacing = 100; // 수직 간격 (부모-자식)
-        this.memberGap = 4; // 직원 정보 간격 (직급-이름)
+        this.memberGap = 8; // 직원 항목 간격 (위아래)
 
         // 버전 관리
         this.versions = []; // 저장된 버전 목록
@@ -634,8 +634,11 @@ class OrgChartApp {
 
         // 헤더 드래그 처리
         if (this.draggedHeader) {
-            const newX = e.clientX - this.headerDragOffset.x + this.canvasContainer.scrollLeft;
-            const newY = e.clientY - this.headerDragOffset.y + this.canvasContainer.scrollTop;
+            const containerRect = this.canvasContainer.getBoundingClientRect();
+
+            // 스크롤과 줌 레벨을 고려한 실제 위치 계산
+            const newX = (e.clientX - containerRect.left + this.canvasContainer.scrollLeft) / this.zoomLevel - this.headerDragOffset.x;
+            const newY = (e.clientY - containerRect.top + this.canvasContainer.scrollTop) / this.zoomLevel - this.headerDragOffset.y;
 
             if (this.draggedHeader.isRight) {
                 // date는 right 기준
@@ -974,11 +977,11 @@ class OrgChartApp {
         this.hideSpacingModal();
         this.saveToLocalStorage();
 
-        alert(`간격이 설정되었습니다.\n수평: ${this.horizontalSpacing}px, 수직: ${this.verticalSpacing}px, 직원 정보: ${this.memberGap}px\n\n자동 배치를 클릭하여 노드 간격을 적용하세요.`);
+        alert(`간격이 설정되었습니다.\n수평: ${this.horizontalSpacing}px, 수직: ${this.verticalSpacing}px, 직원 항목: ${this.memberGap}px\n\n자동 배치를 클릭하여 노드 간격을 적용하세요.`);
     }
 
     applyMemberGap() {
-        // Apply gap to all member items dynamically
+        // Apply padding to all member items dynamically
         const style = document.createElement('style');
         style.id = 'member-gap-style';
 
@@ -990,7 +993,7 @@ class OrgChartApp {
 
         style.textContent = `
             .member-item {
-                gap: ${this.memberGap}px !important;
+                padding: ${this.memberGap}px 12px !important;
             }
         `;
         document.head.appendChild(style);
