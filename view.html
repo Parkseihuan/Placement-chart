@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>조직도 보기</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* View-specific styles */
+        .org-node {
+            cursor: default !important;
+        }
+
+        .org-node:hover {
+            transform: none !important;
+        }
+
+        .connection-anchor {
+            display: none !important;
+        }
+
+        .chart-title, .chart-date {
+            cursor: default !important;
+            pointer-events: none !important;
+        }
+
+        .view-mode-badge {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(79, 70, 229, 0.9);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .admin-link {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            color: #4f46e5;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border: 2px solid #4f46e5;
+            transition: all 0.2s ease;
+        }
+
+        .admin-link:hover {
+            background: #4f46e5;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header class="toolbar">
+            <div class="toolbar-brand">
+                <div class="toolbar-logo">용</div>
+                <div class="toolbar-title">
+                    <h1>조직도 보기</h1>
+                    <span class="toolbar-subtitle">Organizational Chart Viewer</span>
+                </div>
+            </div>
+            <div class="toolbar-actions">
+                <button id="exportBtn" class="btn btn-primary" data-tooltip="조직도를 PNG 이미지로 저장합니다">📥 이미지 저장</button>
+            </div>
+        </header>
+
+        <main class="canvas-container">
+            <div class="zoom-controls">
+                <button id="zoomInBtn" class="zoom-btn" data-tooltip="확대 (Ctrl +)">+</button>
+                <span id="zoomLevel" class="zoom-level">100%</span>
+                <button id="zoomOutBtn" class="zoom-btn" data-tooltip="축소 (Ctrl -)">-</button>
+                <button id="zoomResetBtn" class="zoom-btn" data-tooltip="원래 크기 (Ctrl 0)">⟲</button>
+            </div>
+            <div id="chartHeader" class="chart-header">
+                <div id="chartTitle" class="chart-title">용인대학교 교직원 배치표</div>
+                <div id="chartDate" class="chart-date">2024. 2. 8. 현재</div>
+            </div>
+            <svg id="connections"></svg>
+            <div id="orgChart"></div>
+        </main>
+
+        <div class="view-mode-badge">👁️ 보기 모드</div>
+        <a href="index.html" class="admin-link">🔧 관리자 모드로 전환</a>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="view.js"></script>
+</body>
+</html>
