@@ -793,59 +793,58 @@ class OrgChartApp {
         const startDirection = child.connectionStart || 'bottom';
         const endDirection = child.connectionEnd || 'top';
 
-        // 실제 element의 위치와 크기를 기준으로 좌표 계산
-        const parentWidth = parentEl.offsetWidth;
-        const parentHeight = parentEl.offsetHeight;
-        const childWidth = childEl.offsetWidth;
-        const childHeight = childEl.offsetHeight;
+        // 실제 화면상 위치 가져오기 (transform 반영됨)
+        const parentRect = parentEl.getBoundingClientRect();
+        const childRect = childEl.getBoundingClientRect();
+        const svgRect = this.connections.getBoundingClientRect();
 
-        // 앵커 포인트 계산 (node.x, node.y 기준)
+        // SVG 좌표계 기준으로 변환
         let startX, startY, endX, endY;
 
-        // 부모 앵커 포인트 (zoom 반영)
+        // 부모 앵커 포인트
         switch (startDirection) {
             case 'top':
-                startX = (parent.x + parentWidth / 2) * this.zoomLevel;
-                startY = parent.y * this.zoomLevel;
+                startX = parentRect.left - svgRect.left + parentRect.width / 2;
+                startY = parentRect.top - svgRect.top;
                 break;
             case 'bottom':
-                startX = (parent.x + parentWidth / 2) * this.zoomLevel;
-                startY = (parent.y + parentHeight) * this.zoomLevel;
+                startX = parentRect.left - svgRect.left + parentRect.width / 2;
+                startY = parentRect.bottom - svgRect.top;
                 break;
             case 'left':
-                startX = parent.x * this.zoomLevel;
-                startY = (parent.y + parentHeight / 2) * this.zoomLevel;
+                startX = parentRect.left - svgRect.left;
+                startY = parentRect.top - svgRect.top + parentRect.height / 2;
                 break;
             case 'right':
-                startX = (parent.x + parentWidth) * this.zoomLevel;
-                startY = (parent.y + parentHeight / 2) * this.zoomLevel;
+                startX = parentRect.right - svgRect.left;
+                startY = parentRect.top - svgRect.top + parentRect.height / 2;
                 break;
             default:
-                startX = (parent.x + parentWidth / 2) * this.zoomLevel;
-                startY = (parent.y + parentHeight) * this.zoomLevel;
+                startX = parentRect.left - svgRect.left + parentRect.width / 2;
+                startY = parentRect.bottom - svgRect.top;
         }
 
-        // 자식 앵커 포인트 (zoom 반영)
+        // 자식 앵커 포인트
         switch (endDirection) {
             case 'top':
-                endX = (child.x + childWidth / 2) * this.zoomLevel;
-                endY = child.y * this.zoomLevel;
+                endX = childRect.left - svgRect.left + childRect.width / 2;
+                endY = childRect.top - svgRect.top;
                 break;
             case 'bottom':
-                endX = (child.x + childWidth / 2) * this.zoomLevel;
-                endY = (child.y + childHeight) * this.zoomLevel;
+                endX = childRect.left - svgRect.left + childRect.width / 2;
+                endY = childRect.bottom - svgRect.top;
                 break;
             case 'left':
-                endX = child.x * this.zoomLevel;
-                endY = (child.y + childHeight / 2) * this.zoomLevel;
+                endX = childRect.left - svgRect.left;
+                endY = childRect.top - svgRect.top + childRect.height / 2;
                 break;
             case 'right':
-                endX = (child.x + childWidth) * this.zoomLevel;
-                endY = (child.y + childHeight / 2) * this.zoomLevel;
+                endX = childRect.right - svgRect.left;
+                endY = childRect.top - svgRect.top + childRect.height / 2;
                 break;
             default:
-                endX = (child.x + childWidth / 2) * this.zoomLevel;
-                endY = child.y * this.zoomLevel;
+                endX = childRect.left - svgRect.left + childRect.width / 2;
+                endY = childRect.top - svgRect.top;
         }
 
         const startPoint = { x: startX, y: startY };
@@ -2236,14 +2235,7 @@ class OrgChartApp {
         const gridSize = 20 * this.zoomLevel;
         this.canvasContainer.style.backgroundSize = `${gridSize}px ${gridSize}px`;
 
-        // SVG 크기를 zoom에 맞게 조정
-        const connections = document.getElementById('connections');
-        const scaledWidth = 2100 * this.zoomLevel;
-        const scaledHeight = 1500 * this.zoomLevel;
-        connections.setAttribute('width', scaledWidth);
-        connections.setAttribute('height', scaledHeight);
-
-        // Redraw connections with scaled coordinates
+        // Redraw connections to match new zoom
         this.updateConnections();
     }
 
