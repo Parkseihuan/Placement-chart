@@ -824,62 +824,59 @@ class OrgChartApp {
         const startDirection = child.connectionStart || 'bottom';
         const endDirection = child.connectionEnd || 'top';
 
-        // 실제 화면상 위치 가져오기 (transform 반영됨)
-        const parentRect = parentEl.getBoundingClientRect();
-        const childRect = childEl.getBoundingClientRect();
-        const containerRect = this.canvasContainer.getBoundingClientRect();
+        // 노드의 실제 크기 가져오기
+        const parentWidth = parentEl.offsetWidth;
+        const parentHeight = parentEl.offsetHeight;
+        const childWidth = childEl.offsetWidth;
+        const childHeight = childEl.offsetHeight;
 
-        // 스크롤 오프셋 포함하여 계산
-        const scrollLeft = this.canvasContainer.scrollLeft;
-        const scrollTop = this.canvasContainer.scrollTop;
-
-        // SVG 좌표계 기준으로 변환
+        // SVG와 노드가 같은 transform으로 스케일되므로 node.x, node.y를 직접 사용
         let startX, startY, endX, endY;
 
         // 부모 앵커 포인트
         switch (startDirection) {
             case 'top':
-                startX = parentRect.left - containerRect.left + scrollLeft + parentRect.width / 2;
-                startY = parentRect.top - containerRect.top + scrollTop;
+                startX = parent.x + parentWidth / 2;
+                startY = parent.y;
                 break;
             case 'bottom':
-                startX = parentRect.left - containerRect.left + scrollLeft + parentRect.width / 2;
-                startY = parentRect.bottom - containerRect.top + scrollTop;
+                startX = parent.x + parentWidth / 2;
+                startY = parent.y + parentHeight;
                 break;
             case 'left':
-                startX = parentRect.left - containerRect.left + scrollLeft;
-                startY = parentRect.top - containerRect.top + scrollTop + parentRect.height / 2;
+                startX = parent.x;
+                startY = parent.y + parentHeight / 2;
                 break;
             case 'right':
-                startX = parentRect.right - containerRect.left + scrollLeft;
-                startY = parentRect.top - containerRect.top + scrollTop + parentRect.height / 2;
+                startX = parent.x + parentWidth;
+                startY = parent.y + parentHeight / 2;
                 break;
             default:
-                startX = parentRect.left - containerRect.left + scrollLeft + parentRect.width / 2;
-                startY = parentRect.bottom - containerRect.top + scrollTop;
+                startX = parent.x + parentWidth / 2;
+                startY = parent.y + parentHeight;
         }
 
         // 자식 앵커 포인트
         switch (endDirection) {
             case 'top':
-                endX = childRect.left - containerRect.left + scrollLeft + childRect.width / 2;
-                endY = childRect.top - containerRect.top + scrollTop;
+                endX = child.x + childWidth / 2;
+                endY = child.y;
                 break;
             case 'bottom':
-                endX = childRect.left - containerRect.left + scrollLeft + childRect.width / 2;
-                endY = childRect.bottom - containerRect.top + scrollTop;
+                endX = child.x + childWidth / 2;
+                endY = child.y + childHeight;
                 break;
             case 'left':
-                endX = childRect.left - containerRect.left + scrollLeft;
-                endY = childRect.top - containerRect.top + scrollTop + childRect.height / 2;
+                endX = child.x;
+                endY = child.y + childHeight / 2;
                 break;
             case 'right':
-                endX = childRect.right - containerRect.left + scrollLeft;
-                endY = childRect.top - containerRect.top + scrollTop + childRect.height / 2;
+                endX = child.x + childWidth;
+                endY = child.y + childHeight / 2;
                 break;
             default:
-                endX = childRect.left - containerRect.left + scrollLeft + childRect.width / 2;
-                endY = childRect.top - containerRect.top + scrollTop;
+                endX = child.x + childWidth / 2;
+                endY = child.y;
         }
 
         const startPoint = { x: startX, y: startY };
@@ -2253,7 +2250,7 @@ class OrgChartApp {
         // Clamp zoom level
         this.zoomLevel = Math.max(this.minZoom, Math.min(this.maxZoom, level));
 
-        // Apply transform to chart and header
+        // Apply transform to chart, header, and SVG connections
         const transform = `scale(${this.zoomLevel})`;
         this.orgChart.style.transform = transform;
         this.orgChart.style.transformOrigin = 'top left';
@@ -2261,6 +2258,10 @@ class OrgChartApp {
         const chartHeader = document.getElementById('chartHeader');
         chartHeader.style.transform = transform;
         chartHeader.style.transformOrigin = 'top left';
+
+        // Apply same transform to SVG so lines scale with nodes
+        this.connections.style.transform = transform;
+        this.connections.style.transformOrigin = 'top left';
 
         // Update zoom level display
         const percentage = Math.round(this.zoomLevel * 100);
