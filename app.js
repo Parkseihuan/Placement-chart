@@ -802,50 +802,50 @@ class OrgChartApp {
         // 앵커 포인트 계산 (node.x, node.y 기준)
         let startX, startY, endX, endY;
 
-        // 부모 앵커 포인트
+        // 부모 앵커 포인트 (zoom 반영)
         switch (startDirection) {
             case 'top':
-                startX = parent.x + parentWidth / 2;
-                startY = parent.y;
+                startX = (parent.x + parentWidth / 2) * this.zoomLevel;
+                startY = parent.y * this.zoomLevel;
                 break;
             case 'bottom':
-                startX = parent.x + parentWidth / 2;
-                startY = parent.y + parentHeight;
+                startX = (parent.x + parentWidth / 2) * this.zoomLevel;
+                startY = (parent.y + parentHeight) * this.zoomLevel;
                 break;
             case 'left':
-                startX = parent.x;
-                startY = parent.y + parentHeight / 2;
+                startX = parent.x * this.zoomLevel;
+                startY = (parent.y + parentHeight / 2) * this.zoomLevel;
                 break;
             case 'right':
-                startX = parent.x + parentWidth;
-                startY = parent.y + parentHeight / 2;
+                startX = (parent.x + parentWidth) * this.zoomLevel;
+                startY = (parent.y + parentHeight / 2) * this.zoomLevel;
                 break;
             default:
-                startX = parent.x + parentWidth / 2;
-                startY = parent.y + parentHeight;
+                startX = (parent.x + parentWidth / 2) * this.zoomLevel;
+                startY = (parent.y + parentHeight) * this.zoomLevel;
         }
 
-        // 자식 앵커 포인트
+        // 자식 앵커 포인트 (zoom 반영)
         switch (endDirection) {
             case 'top':
-                endX = child.x + childWidth / 2;
-                endY = child.y;
+                endX = (child.x + childWidth / 2) * this.zoomLevel;
+                endY = child.y * this.zoomLevel;
                 break;
             case 'bottom':
-                endX = child.x + childWidth / 2;
-                endY = child.y + childHeight;
+                endX = (child.x + childWidth / 2) * this.zoomLevel;
+                endY = (child.y + childHeight) * this.zoomLevel;
                 break;
             case 'left':
-                endX = child.x;
-                endY = child.y + childHeight / 2;
+                endX = child.x * this.zoomLevel;
+                endY = (child.y + childHeight / 2) * this.zoomLevel;
                 break;
             case 'right':
-                endX = child.x + childWidth;
-                endY = child.y + childHeight / 2;
+                endX = (child.x + childWidth) * this.zoomLevel;
+                endY = (child.y + childHeight / 2) * this.zoomLevel;
                 break;
             default:
-                endX = child.x + childWidth / 2;
-                endY = child.y;
+                endX = (child.x + childWidth / 2) * this.zoomLevel;
+                endY = child.y * this.zoomLevel;
         }
 
         const startPoint = { x: startX, y: startY };
@@ -2219,7 +2219,7 @@ class OrgChartApp {
         // Clamp zoom level
         this.zoomLevel = Math.max(this.minZoom, Math.min(this.maxZoom, level));
 
-        // Apply transform to chart, header, and connections
+        // Apply transform to chart and header
         const transform = `scale(${this.zoomLevel})`;
         this.orgChart.style.transform = transform;
         this.orgChart.style.transformOrigin = 'top left';
@@ -2228,11 +2228,6 @@ class OrgChartApp {
         chartHeader.style.transform = transform;
         chartHeader.style.transformOrigin = 'top left';
 
-        // Apply transform to connections SVG
-        const connections = document.getElementById('connections');
-        connections.style.transform = transform;
-        connections.style.transformOrigin = 'top left';
-
         // Update zoom level display
         const percentage = Math.round(this.zoomLevel * 100);
         document.getElementById('zoomLevel').textContent = `${percentage}%`;
@@ -2240,6 +2235,16 @@ class OrgChartApp {
         // Update background grid size
         const gridSize = 20 * this.zoomLevel;
         this.canvasContainer.style.backgroundSize = `${gridSize}px ${gridSize}px`;
+
+        // SVG 크기를 zoom에 맞게 조정
+        const connections = document.getElementById('connections');
+        const scaledWidth = 2100 * this.zoomLevel;
+        const scaledHeight = 1500 * this.zoomLevel;
+        connections.setAttribute('width', scaledWidth);
+        connections.setAttribute('height', scaledHeight);
+
+        // Redraw connections with scaled coordinates
+        this.updateConnections();
     }
 
     // Utility
