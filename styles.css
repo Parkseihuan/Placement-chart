@@ -45,8 +45,9 @@ body {
     align-items: center;
     justify-content: center;
     color: white;
-    font-weight: 600;
-    font-size: 20px;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 1px;
 }
 
 .toolbar-title {
@@ -366,6 +367,11 @@ body {
 .org-node.selected {
     border-color: #37352F;
     box-shadow: 0 0 0 2px rgba(55, 53, 47, 0.2);
+}
+
+.org-node.multi-selected {
+    border-color: #2EAADC;
+    box-shadow: 0 0 0 2px rgba(46, 170, 220, 0.3);
 }
 
 .node-header {

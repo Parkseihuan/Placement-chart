@@ -37,6 +37,7 @@ class OrgChartApp {
         this.isSelecting = false;
         this.selectionStart = null;
         this.selectionBox = null;
+        this.selectedNodes = new Set(); // 선택된 노드 ID들
         this.nodeGroups = []; // 노드 그룹들
         this.nextGroupId = 1;
 
@@ -488,11 +489,18 @@ class OrgChartApp {
         this.selectionBox = null;
         this.isSelecting = false;
 
-        // 선택된 노드가 있으면 그룹 생성
-        if (selectedNodes.length >= 2) {
-            this.createGroup(selectedNodes);
-        } else {
-            alert('최소 2개 이상의 노드를 선택해야 그룹을 만들 수 있습니다.');
+        // 선택된 노드들 저장 및 표시
+        this.selectedNodes.clear();
+        selectedNodes.forEach(nodeId => {
+            this.selectedNodes.add(nodeId);
+            const element = document.getElementById(nodeId);
+            if (element) {
+                element.classList.add('multi-selected');
+            }
+        });
+
+        if (selectedNodes.length > 0) {
+            console.log(`${selectedNodes.length}개 노드가 선택되었습니다. 드래그하여 함께 이동할 수 있습니다.`);
         }
 
         // 선택 모드 종료
@@ -655,13 +663,36 @@ class OrgChartApp {
         const newX = mouseX - this.dragOffset.x;
         const newY = mouseY - this.dragOffset.y;
 
-        // Update position
+        // 이동량 계산
+        const deltaX = newX - this.draggedNode.x;
+        const deltaY = newY - this.draggedNode.y;
+
+        // Update dragged node position
         this.draggedNode.x = Math.max(0, newX);
         this.draggedNode.y = Math.max(0, newY);
 
         const element = document.getElementById(this.draggedNode.id);
         element.style.left = `${this.draggedNode.x}px`;
         element.style.top = `${this.draggedNode.y}px`;
+
+        // 다중 선택된 다른 노드들도 함께 이동
+        if (this.selectedNodes.size > 1 && this.selectedNodes.has(this.draggedNode.id)) {
+            this.selectedNodes.forEach(nodeId => {
+                if (nodeId === this.draggedNode.id) return; // 이미 이동함
+
+                const node = this.nodes.get(nodeId);
+                if (node) {
+                    node.x = Math.max(0, node.x + deltaX);
+                    node.y = Math.max(0, node.y + deltaY);
+
+                    const el = document.getElementById(nodeId);
+                    if (el) {
+                        el.style.left = `${node.x}px`;
+                        el.style.top = `${node.y}px`;
+                    }
+                }
+            });
+        }
 
         this.updateConnections();
     }
@@ -796,7 +827,11 @@ class OrgChartApp {
         // 실제 화면상 위치 가져오기 (transform 반영됨)
         const parentRect = parentEl.getBoundingClientRect();
         const childRect = childEl.getBoundingClientRect();
-        const svgRect = this.connections.getBoundingClientRect();
+        const containerRect = this.canvasContainer.getBoundingClientRect();
+
+        // 스크롤 오프셋 포함하여 계산
+        const scrollLeft = this.canvasContainer.scrollLeft;
+        const scrollTop = this.canvasContainer.scrollTop;
 
         // SVG 좌표계 기준으로 변환
         let startX, startY, endX, endY;
@@ -804,47 +839,47 @@ class OrgChartApp {
         // 부모 앵커 포인트
         switch (startDirection) {
             case 'top':
-                startX = parentRect.left - svgRect.left + parentRect.width / 2;
-                startY = parentRect.top - svgRect.top;
+                startX = parentRect.left - containerRect.left + scrollLeft + parentRect.width / 2;
+                startY = parentRect.top - containerRect.top + scrollTop;
                 break;
             case 'bottom':
-                startX = parentRect.left - svgRect.left + parentRect.width / 2;
-                startY = parentRect.bottom - svgRect.top;
+                startX = parentRect.left - containerRect.left + scrollLeft + parentRect.width / 2;
+                startY = parentRect.bottom - containerRect.top + scrollTop;
                 break;
             case 'left':
-                startX = parentRect.left - svgRect.left;
-                startY = parentRect.top - svgRect.top + parentRect.height / 2;
+                startX = parentRect.left - containerRect.left + scrollLeft;
+                startY = parentRect.top - containerRect.top + scrollTop + parentRect.height / 2;
                 break;
             case 'right':
-                startX = parentRect.right - svgRect.left;
-                startY = parentRect.top - svgRect.top + parentRect.height / 2;
+                startX = parentRect.right - containerRect.left + scrollLeft;
+                startY = parentRect.top - containerRect.top + scrollTop + parentRect.height / 2;
                 break;
             default:
-                startX = parentRect.left - svgRect.left + parentRect.width / 2;
-                startY = parentRect.bottom - svgRect.top;
+                startX = parentRect.left - containerRect.left + scrollLeft + parentRect.width / 2;
+                startY = parentRect.bottom - containerRect.top + scrollTop;
         }
 
         // 자식 앵커 포인트
         switch (endDirection) {
             case 'top':
-                endX = childRect.left - svgRect.left + childRect.width / 2;
-                endY = childRect.top - svgRect.top;
+                endX = childRect.left - containerRect.left + scrollLeft + childRect.width / 2;
+                endY = childRect.top - containerRect.top + scrollTop;
                 break;
             case 'bottom':
-                endX = childRect.left - svgRect.left + childRect.width / 2;
-                endY = childRect.bottom - svgRect.top;
+                endX = childRect.left - containerRect.left + scrollLeft + childRect.width / 2;
+                endY = childRect.bottom - containerRect.top + scrollTop;
                 break;
             case 'left':
-                endX = childRect.left - svgRect.left;
-                endY = childRect.top - svgRect.top + childRect.height / 2;
+                endX = childRect.left - containerRect.left + scrollLeft;
+                endY = childRect.top - containerRect.top + scrollTop + childRect.height / 2;
                 break;
             case 'right':
-                endX = childRect.right - svgRect.left;
-                endY = childRect.top - svgRect.top + childRect.height / 2;
+                endX = childRect.right - containerRect.left + scrollLeft;
+                endY = childRect.top - containerRect.top + scrollTop + childRect.height / 2;
                 break;
             default:
-                endX = childRect.left - svgRect.left + childRect.width / 2;
-                endY = childRect.top - svgRect.top;
+                endX = childRect.left - containerRect.left + scrollLeft + childRect.width / 2;
+                endY = childRect.top - containerRect.top + scrollTop;
         }
 
         const startPoint = { x: startX, y: startY };
