@@ -602,11 +602,16 @@ class OrgChartApp {
 
         const node = this.nodes.get(nodeId);
         const element = document.getElementById(nodeId);
+        const containerRect = this.canvasContainer.getBoundingClientRect();
 
         this.draggedNode = node;
+        // 줌과 스크롤을 고려한 오프셋 계산
+        const clickX = (e.clientX - containerRect.left + this.canvasContainer.scrollLeft) / this.zoomLevel;
+        const clickY = (e.clientY - containerRect.top + this.canvasContainer.scrollTop) / this.zoomLevel;
+
         this.dragOffset = {
-            x: e.clientX - node.x,
-            y: e.clientY - node.y
+            x: clickX - node.x,
+            y: clickY - node.y
         };
 
         element.classList.add('dragging');
@@ -668,8 +673,9 @@ class OrgChartApp {
 
         // 연결선 드래그 처리
         if (this.isDraggingConnection && this.tempLine) {
-            const x = e.clientX + this.canvasContainer.scrollLeft;
-            const y = e.clientY + this.canvasContainer.scrollTop;
+            const containerRect = this.canvasContainer.getBoundingClientRect();
+            const x = (e.clientX - containerRect.left + this.canvasContainer.scrollLeft) / this.zoomLevel;
+            const y = (e.clientY - containerRect.top + this.canvasContainer.scrollTop) / this.zoomLevel;
             this.tempLine.setAttribute('x2', x);
             this.tempLine.setAttribute('y2', y);
             return;
@@ -687,8 +693,14 @@ class OrgChartApp {
         // 노드 드래그 처리
         if (!this.draggedNode) return;
 
-        const newX = e.clientX - this.dragOffset.x;
-        const newY = e.clientY - this.dragOffset.y;
+        const containerRect = this.canvasContainer.getBoundingClientRect();
+
+        // 줌과 스크롤을 고려한 실제 위치 계산
+        const mouseX = (e.clientX - containerRect.left + this.canvasContainer.scrollLeft) / this.zoomLevel;
+        const mouseY = (e.clientY - containerRect.top + this.canvasContainer.scrollTop) / this.zoomLevel;
+
+        const newX = mouseX - this.dragOffset.x;
+        const newY = mouseY - this.dragOffset.y;
 
         // Update position
         this.draggedNode.x = Math.max(0, newX);
