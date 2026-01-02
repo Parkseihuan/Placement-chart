@@ -793,9 +793,63 @@ class OrgChartApp {
         const startDirection = child.connectionStart || 'bottom';
         const endDirection = child.connectionEnd || 'top';
 
-        // SVG는 transform되지 않으므로 원본 좌표 사용
-        const startPoint = this.getAnchorPointForExport(parent, startDirection);
-        const endPoint = this.getAnchorPointForExport(child, endDirection);
+        // 실제 element의 위치와 크기를 기준으로 좌표 계산
+        const parentWidth = parentEl.offsetWidth;
+        const parentHeight = parentEl.offsetHeight;
+        const childWidth = childEl.offsetWidth;
+        const childHeight = childEl.offsetHeight;
+
+        // 앵커 포인트 계산 (node.x, node.y 기준)
+        let startX, startY, endX, endY;
+
+        // 부모 앵커 포인트
+        switch (startDirection) {
+            case 'top':
+                startX = parent.x + parentWidth / 2;
+                startY = parent.y;
+                break;
+            case 'bottom':
+                startX = parent.x + parentWidth / 2;
+                startY = parent.y + parentHeight;
+                break;
+            case 'left':
+                startX = parent.x;
+                startY = parent.y + parentHeight / 2;
+                break;
+            case 'right':
+                startX = parent.x + parentWidth;
+                startY = parent.y + parentHeight / 2;
+                break;
+            default:
+                startX = parent.x + parentWidth / 2;
+                startY = parent.y + parentHeight;
+        }
+
+        // 자식 앵커 포인트
+        switch (endDirection) {
+            case 'top':
+                endX = child.x + childWidth / 2;
+                endY = child.y;
+                break;
+            case 'bottom':
+                endX = child.x + childWidth / 2;
+                endY = child.y + childHeight;
+                break;
+            case 'left':
+                endX = child.x;
+                endY = child.y + childHeight / 2;
+                break;
+            case 'right':
+                endX = child.x + childWidth;
+                endY = child.y + childHeight / 2;
+                break;
+            default:
+                endX = child.x + childWidth / 2;
+                endY = child.y;
+        }
+
+        const startPoint = { x: startX, y: startY };
+        const endPoint = { x: endX, y: endY };
 
         // 중간점을 계산하여 경로 생성
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
