@@ -234,6 +234,13 @@ body {
     overflow: visible;
 }
 
+/* Connection Lines */
+.connection-line {
+    stroke: #37352F;
+    stroke-width: 2;
+    fill: none;
+}
+
 /* Chart Header */
 .chart-header {
     position: relative;
@@ -776,13 +783,6 @@ body {
 
 .menu-item[data-action="delete"]:hover {
     background: #FEF5F5;
-}
-
-/* Connection Lines */
-.connection-line {
-    stroke: #D3D3D0;
-    stroke-width: 1.5;
-    fill: none;
 }
 
 /* Selection Box (영역 선택) */
