@@ -2165,7 +2165,7 @@ class OrgChartApp {
         // Clamp zoom level
         this.zoomLevel = Math.max(this.minZoom, Math.min(this.maxZoom, level));
 
-        // Apply transform to chart and header (NOT connections - it scales automatically)
+        // Apply transform to chart, header, and connections
         const transform = `scale(${this.zoomLevel})`;
         this.orgChart.style.transform = transform;
         this.orgChart.style.transformOrigin = 'top left';
@@ -2174,6 +2174,11 @@ class OrgChartApp {
         chartHeader.style.transform = transform;
         chartHeader.style.transformOrigin = 'top left';
 
+        // Apply transform to connections SVG
+        const connections = document.getElementById('connections');
+        connections.style.transform = transform;
+        connections.style.transformOrigin = 'top left';
+
         // Update zoom level display
         const percentage = Math.round(this.zoomLevel * 100);
         document.getElementById('zoomLevel').textContent = `${percentage}%`;
@@ -2181,9 +2186,6 @@ class OrgChartApp {
         // Update background grid size
         const gridSize = 20 * this.zoomLevel;
         this.canvasContainer.style.backgroundSize = `${gridSize}px ${gridSize}px`;
-
-        // Redraw connections with proper scale
-        this.updateConnections();
     }
 
     // Utility
