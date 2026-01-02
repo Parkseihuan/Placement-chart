@@ -810,8 +810,33 @@ class OrgChartApp {
         });
     }
 
-    // 앵커 포인트 좌표 계산 헬퍼 함수
+    // 앵커 포인트 좌표 계산 헬퍼 함수 (화면 표시용 - 실제 DOM 위치 사용)
     getAnchorPoint(node, direction) {
+        const element = document.getElementById(node.id);
+        if (!element) return { x: node.x, y: node.y };
+
+        const rect = element.getBoundingClientRect();
+        const containerRect = this.orgChart.getBoundingClientRect();
+
+        const relativeX = rect.left - containerRect.left;
+        const relativeY = rect.top - containerRect.top;
+
+        switch (direction) {
+            case 'top':
+                return { x: relativeX + rect.width / 2, y: relativeY };
+            case 'bottom':
+                return { x: relativeX + rect.width / 2, y: relativeY + rect.height };
+            case 'left':
+                return { x: relativeX, y: relativeY + rect.height / 2 };
+            case 'right':
+                return { x: relativeX + rect.width, y: relativeY + rect.height / 2 };
+            default:
+                return { x: relativeX + rect.width / 2, y: relativeY + rect.height / 2 };
+        }
+    }
+
+    // 앵커 포인트 좌표 계산 헬퍼 함수 (내보내기용 - 저장된 위치 사용)
+    getAnchorPointForExport(node, direction) {
         const element = document.getElementById(node.id);
         if (!element) return { x: node.x, y: node.y };
 
@@ -828,7 +853,7 @@ class OrgChartApp {
             case 'right':
                 return { x: node.x + width, y: node.y + height / 2 };
             default:
-                return { x: node.x + width / 2, y: node.y };
+                return { x: node.x + width / 2, y: node.y + height / 2 };
         }
     }
 
@@ -1817,8 +1842,8 @@ class OrgChartApp {
                     const startDirection = node.connectionStart || 'bottom';
                     const endDirection = node.connectionEnd || 'top';
 
-                    const startPoint = this.getAnchorPoint(parent, startDirection);
-                    const endPoint = this.getAnchorPoint(node, endDirection);
+                    const startPoint = this.getAnchorPointForExport(parent, startDirection);
+                    const endPoint = this.getAnchorPointForExport(node, endDirection);
 
                     // 좌표 조정
                     const adjustedStartX = startPoint.x - minX;
