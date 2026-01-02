@@ -215,26 +215,11 @@ class OrgChartApp {
         element.innerHTML = `
             <div class="node-header">${this.escapeHtml(node.deptName)}</div>
             ${bodyHtml}
-            <div class="connection-anchor top" data-direction="top"></div>
-            <div class="connection-anchor bottom" data-direction="bottom"></div>
-            <div class="connection-anchor left" data-direction="left"></div>
-            <div class="connection-anchor right" data-direction="right"></div>
         `;
 
         element.addEventListener('mousedown', (e) => this.handleNodeMouseDown(e, node.id));
         element.addEventListener('contextmenu', (e) => this.showContextMenu(e, node.id));
         element.addEventListener('dblclick', () => this.editNode(node.id));
-
-        // 연결점 이벤트 리스너
-        const anchors = element.querySelectorAll('.connection-anchor');
-        anchors.forEach(anchor => {
-            anchor.addEventListener('mousedown', (e) => this.handleAnchorMouseDown(e, node.id));
-            // 연결점에서 우클릭 메뉴 방지
-            anchor.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-            });
-        });
 
         this.orgChart.appendChild(element);
     }
@@ -288,28 +273,6 @@ class OrgChartApp {
             }
             // no-members 클래스 추가
             element.classList.add('no-members');
-        }
-
-        // 연결점이 없으면 추가 (업데이트 시 사라질 수 있음)
-        if (!element.querySelector('.connection-anchor')) {
-            const anchorsHtml = `
-                <div class="connection-anchor top" data-direction="top"></div>
-                <div class="connection-anchor bottom" data-direction="bottom"></div>
-                <div class="connection-anchor left" data-direction="left"></div>
-                <div class="connection-anchor right" data-direction="right"></div>
-            `;
-            element.insertAdjacentHTML('beforeend', anchorsHtml);
-
-            // 연결점 이벤트 리스너 재등록
-            const anchors = element.querySelectorAll('.connection-anchor');
-            anchors.forEach(anchor => {
-                anchor.addEventListener('mousedown', (e) => this.handleAnchorMouseDown(e, node.id));
-                // 연결점에서 우클릭 메뉴 방지
-                anchor.addEventListener('contextmenu', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                });
-            });
         }
     }
 
@@ -671,16 +634,6 @@ class OrgChartApp {
             return;
         }
 
-        // 연결선 드래그 처리
-        if (this.isDraggingConnection && this.tempLine) {
-            const containerRect = this.canvasContainer.getBoundingClientRect();
-            const x = (e.clientX - containerRect.left + this.canvasContainer.scrollLeft) / this.zoomLevel;
-            const y = (e.clientY - containerRect.top + this.canvasContainer.scrollTop) / this.zoomLevel;
-            this.tempLine.setAttribute('x2', x);
-            this.tempLine.setAttribute('y2', y);
-            return;
-        }
-
         // 캔버스 패닝 처리
         if (this.isPanning) {
             const x = e.clientX - this.panStart.x;
@@ -724,45 +677,6 @@ class OrgChartApp {
         if (this.draggedHeader) {
             this.draggedHeader = null;
             this.saveToLocalStorage();
-            return;
-        }
-
-        // 연결선 드래그 종료
-        if (this.isDraggingConnection) {
-            // 임시 선 제거
-            if (this.tempLine) {
-                this.tempLine.remove();
-                this.tempLine = null;
-            }
-
-            // 타겟 앵커 또는 노드 찾기
-            const targetAnchor = e.target.closest('.connection-anchor');
-            const targetNode = e.target.closest('.org-node');
-
-            if (targetNode && targetNode.id !== this.connectionStart.nodeId) {
-                const targetNodeId = targetNode.id;
-                const sourceNodeId = this.connectionStart.nodeId;
-
-                // 연결 종료 방향 결정
-                let endDirection = 'top'; // 기본값
-                if (targetAnchor && targetAnchor.dataset.direction) {
-                    endDirection = targetAnchor.dataset.direction;
-                }
-
-                // 연결 생성: 타겟 노드의 부모를 소스 노드로 설정
-                const node = this.nodes.get(targetNodeId);
-                if (node) {
-                    node.parentId = sourceNodeId;
-                    node.connectionStart = this.connectionStart.direction; // 소스의 앵커 방향
-                    node.connectionEnd = endDirection; // 타겟의 앵커 방향
-                    this.updateConnections();
-                    this.saveState();
-                    this.saveToLocalStorage();
-                }
-            }
-
-            this.isDraggingConnection = false;
-            this.connectionStart = null;
             return;
         }
 
@@ -879,8 +793,9 @@ class OrgChartApp {
         const startDirection = child.connectionStart || 'bottom';
         const endDirection = child.connectionEnd || 'top';
 
-        const startPoint = this.getAnchorPoint(parent, startDirection);
-        const endPoint = this.getAnchorPoint(child, endDirection);
+        // SVG는 transform되지 않으므로 원본 좌표 사용
+        const startPoint = this.getAnchorPointForExport(parent, startDirection);
+        const endPoint = this.getAnchorPointForExport(child, endDirection);
 
         // 중간점을 계산하여 경로 생성
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -2250,7 +2165,7 @@ class OrgChartApp {
         // Clamp zoom level
         this.zoomLevel = Math.max(this.minZoom, Math.min(this.maxZoom, level));
 
-        // Apply transform to chart, header, and connections
+        // Apply transform to chart and header (NOT connections - it scales automatically)
         const transform = `scale(${this.zoomLevel})`;
         this.orgChart.style.transform = transform;
         this.orgChart.style.transformOrigin = 'top left';
@@ -2259,11 +2174,6 @@ class OrgChartApp {
         chartHeader.style.transform = transform;
         chartHeader.style.transformOrigin = 'top left';
 
-        // Apply transform to connections SVG
-        const connections = document.getElementById('connections');
-        connections.style.transform = transform;
-        connections.style.transformOrigin = 'top left';
-
         // Update zoom level display
         const percentage = Math.round(this.zoomLevel * 100);
         document.getElementById('zoomLevel').textContent = `${percentage}%`;
@@ -2271,6 +2181,9 @@ class OrgChartApp {
         // Update background grid size
         const gridSize = 20 * this.zoomLevel;
         this.canvasContainer.style.backgroundSize = `${gridSize}px ${gridSize}px`;
+
+        // Redraw connections with proper scale
+        this.updateConnections();
     }
 
     // Utility
