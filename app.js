@@ -55,6 +55,10 @@ class OrgChartApp {
         this.minZoom = 0.25; // 25%
         this.maxZoom = 2; // 200%
 
+        // 그리드 스냅
+        this.gridSize = 10; // 10px 그리드
+        this.snapToGrid = true; // 그리드 스냅 활성화
+
         this.initElements();
         this.initEventListeners();
         this.loadVersionsFromLocalStorage();
@@ -722,6 +726,38 @@ class OrgChartApp {
 
         const element = document.getElementById(this.draggedNode.id);
         element.classList.remove('dragging');
+
+        // 그리드 스냅 적용
+        if (this.snapToGrid) {
+            this.draggedNode.x = Math.round(this.draggedNode.x / this.gridSize) * this.gridSize;
+            this.draggedNode.y = Math.round(this.draggedNode.y / this.gridSize) * this.gridSize;
+
+            // 위치 업데이트
+            element.style.left = `${this.draggedNode.x}px`;
+            element.style.top = `${this.draggedNode.y}px`;
+
+            // 다중 선택된 노드들도 스냅
+            if (this.selectedNodes.size > 1 && this.selectedNodes.has(this.draggedNode.id)) {
+                this.selectedNodes.forEach(nodeId => {
+                    if (nodeId === this.draggedNode.id) return;
+
+                    const node = this.nodes.get(nodeId);
+                    if (node) {
+                        node.x = Math.round(node.x / this.gridSize) * this.gridSize;
+                        node.y = Math.round(node.y / this.gridSize) * this.gridSize;
+
+                        const el = document.getElementById(nodeId);
+                        if (el) {
+                            el.style.left = `${node.x}px`;
+                            el.style.top = `${node.y}px`;
+                        }
+                    }
+                });
+            }
+
+            // 연결선 다시 그리기
+            this.updateConnections();
+        }
 
         this.draggedNode = null;
         this.saveState();
@@ -2266,9 +2302,9 @@ class OrgChartApp {
         const percentage = Math.round(this.zoomLevel * 100);
         document.getElementById('zoomLevel').textContent = `${percentage}%`;
 
-        // Update background grid size
-        const gridSize = 20 * this.zoomLevel;
-        this.canvasContainer.style.backgroundSize = `${gridSize}px ${gridSize}px`;
+        // Update background grid size to match zoom
+        const visualGridSize = this.gridSize * this.zoomLevel;
+        this.canvasContainer.style.backgroundSize = `${visualGridSize}px ${visualGridSize}px`;
 
         // Redraw connections to match new zoom
         this.updateConnections();

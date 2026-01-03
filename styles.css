@@ -169,8 +169,8 @@ body {
     position: relative;
     overflow: auto;
     background-color: #F7F6F3;
-    background-image: radial-gradient(circle, #E3E2E0 1px, transparent 1px);
-    background-size: 20px 20px;
+    background-image: radial-gradient(circle, #D3D3D0 1px, transparent 1px);
+    background-size: 10px 10px;
 }
 
 /* Zoom Controls */
