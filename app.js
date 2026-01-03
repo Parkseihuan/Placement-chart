@@ -59,6 +59,10 @@ class OrgChartApp {
         this.gridSize = 10; // 10px 그리드
         this.snapToGrid = true; // 그리드 스냅 활성화
 
+        // 충돌 감지
+        this.enableCollisionDetection = true; // 충돌 감지 활성화
+        this.collisionPadding = 20; // 노드 간 최소 간격 (px)
+
         this.initElements();
         this.initEventListeners();
         this.loadVersionsFromLocalStorage();
@@ -183,6 +187,19 @@ class OrgChartApp {
 
         this.nodes.set(id, node);
         this.renderNode(node);
+
+        // 충돌 감지 및 위치 조정
+        const resolvedPos = this.resolveCollision(id, node.x, node.y);
+        if (resolvedPos.x !== node.x || resolvedPos.y !== node.y) {
+            node.x = resolvedPos.x;
+            node.y = resolvedPos.y;
+            const element = document.getElementById(id);
+            if (element) {
+                element.style.left = `${node.x}px`;
+                element.style.top = `${node.y}px`;
+            }
+        }
+
         this.updateConnections();
         this.saveState();
         this.saveToLocalStorage();
@@ -533,6 +550,27 @@ class OrgChartApp {
 
         if (selectedNodes.length > 0) {
             console.log(`${selectedNodes.length}개 노드가 선택되었습니다. 드래그하여 함께 이동할 수 있습니다.`);
+
+            // 2개 이상 선택된 경우 그룹 생성 제안
+            if (selectedNodes.length >= 2) {
+                const createGroup = confirm(
+                    `${selectedNodes.length}개의 노드가 선택되었습니다.\n\n` +
+                    `그룹으로 묶으시겠습니까?\n` +
+                    `(그룹으로 묶으면 자동 배치 시 간격이 유지되며, 함께 이동할 수 있습니다)`
+                );
+
+                if (createGroup) {
+                    this.createGroup(selectedNodes);
+                    // 그룹 생성 후 다중 선택 해제
+                    this.selectedNodes.forEach(nodeId => {
+                        const element = document.getElementById(nodeId);
+                        if (element) {
+                            element.classList.remove('multi-selected');
+                        }
+                    });
+                    this.selectedNodes.clear();
+                }
+            }
         }
 
         // 선택 모드 종료
@@ -595,6 +633,114 @@ class OrgChartApp {
 
         this.nodeGroups.splice(groupIndex, 1);
         this.saveToLocalStorage();
+    }
+
+    // Collision Detection
+    getNodeBounds(node) {
+        const element = document.getElementById(node.id);
+        if (!element) return null;
+
+        return {
+            left: node.x - this.collisionPadding,
+            right: node.x + element.offsetWidth + this.collisionPadding,
+            top: node.y - this.collisionPadding,
+            bottom: node.y + element.offsetHeight + this.collisionPadding
+        };
+    }
+
+    checkCollision(nodeA, nodeB) {
+        const boundsA = this.getNodeBounds(nodeA);
+        const boundsB = this.getNodeBounds(nodeB);
+
+        if (!boundsA || !boundsB) return false;
+
+        return !(boundsA.right < boundsB.left ||
+                 boundsA.left > boundsB.right ||
+                 boundsA.bottom < boundsB.top ||
+                 boundsA.top > boundsB.bottom);
+    }
+
+    findCollisions(nodeId, x, y) {
+        const node = this.nodes.get(nodeId);
+        if (!node) return [];
+
+        const element = document.getElementById(nodeId);
+        if (!element) return [];
+
+        // 테스트용 임시 bounds 계산
+        const testBounds = {
+            left: x - this.collisionPadding,
+            right: x + element.offsetWidth + this.collisionPadding,
+            top: y - this.collisionPadding,
+            bottom: y + element.offsetHeight + this.collisionPadding
+        };
+
+        const collisions = [];
+
+        this.nodes.forEach((otherNode, otherId) => {
+            if (otherId === nodeId) return;
+
+            const otherBounds = this.getNodeBounds(otherNode);
+            if (!otherBounds) return;
+
+            if (!(testBounds.right < otherBounds.left ||
+                  testBounds.left > otherBounds.right ||
+                  testBounds.bottom < otherBounds.top ||
+                  testBounds.top > otherBounds.bottom)) {
+                collisions.push(otherNode);
+            }
+        });
+
+        return collisions;
+    }
+
+    resolveCollision(nodeId, proposedX, proposedY) {
+        if (!this.enableCollisionDetection) {
+            return { x: proposedX, y: proposedY };
+        }
+
+        const collisions = this.findCollisions(nodeId, proposedX, proposedY);
+
+        if (collisions.length === 0) {
+            return { x: proposedX, y: proposedY };
+        }
+
+        // 충돌이 있는 경우, 가장 가까운 충돌 없는 위치 찾기
+        const node = this.nodes.get(nodeId);
+        const element = document.getElementById(nodeId);
+        if (!node || !element) return { x: proposedX, y: proposedY };
+
+        // 여러 방향으로 시도
+        const directions = [
+            { dx: 0, dy: -1 }, // 위
+            { dx: 0, dy: 1 },  // 아래
+            { dx: -1, dy: 0 }, // 왼쪽
+            { dx: 1, dy: 0 },  // 오른쪽
+            { dx: -1, dy: -1 }, // 왼쪽 위
+            { dx: 1, dy: -1 },  // 오른쪽 위
+            { dx: -1, dy: 1 },  // 왼쪽 아래
+            { dx: 1, dy: 1 }    // 오른쪽 아래
+        ];
+
+        const step = this.gridSize; // 그리드 크기만큼 이동
+        const maxAttempts = 20; // 최대 시도 횟수
+
+        for (let distance = step; distance <= step * maxAttempts; distance += step) {
+            for (const dir of directions) {
+                const testX = proposedX + (dir.dx * distance);
+                const testY = proposedY + (dir.dy * distance);
+
+                if (testX < 0 || testY < 0) continue; // 캔버스 밖은 제외
+
+                const testCollisions = this.findCollisions(nodeId, testX, testY);
+                if (testCollisions.length === 0) {
+                    return { x: testX, y: testY };
+                }
+            }
+        }
+
+        // 충돌을 해결할 수 없는 경우, 원래 위치 유지
+        return { x: node.x, y: node.y };
     }
 
     // Drag and Drop
@@ -726,6 +872,33 @@ class OrgChartApp {
             });
         }
 
+        // 그룹에 속한 다른 노드들도 함께 이동
+        const draggedElement = document.getElementById(this.draggedNode.id);
+        if (draggedElement && draggedElement.dataset.groupId) {
+            const groupId = draggedElement.dataset.groupId;
+            const group = this.nodeGroups.find(g => g.id === groupId);
+
+            if (group) {
+                group.nodeIds.forEach(nodeId => {
+                    if (nodeId === this.draggedNode.id) return; // 이미 이동함
+                    // 다중 선택에서 이미 처리된 노드는 건너뛰기
+                    if (this.selectedNodes.size > 1 && this.selectedNodes.has(nodeId)) return;
+
+                    const node = this.nodes.get(nodeId);
+                    if (node) {
+                        node.x = Math.max(0, node.x + deltaX);
+                        node.y = Math.max(0, node.y + deltaY);
+
+                        const el = document.getElementById(nodeId);
+                        if (el) {
+                            el.style.left = `${node.x}px`;
+                            el.style.top = `${node.y}px`;
+                        }
+                    }
+                });
+            }
+        }
+
         this.updateConnections();
     }
 
@@ -759,20 +932,64 @@ class OrgChartApp {
         if (this.snapToGrid) {
             this.draggedNode.x = Math.round(this.draggedNode.x / this.gridSize) * this.gridSize;
             this.draggedNode.y = Math.round(this.draggedNode.y / this.gridSize) * this.gridSize;
+        }
 
-            // 위치 업데이트
-            element.style.left = `${this.draggedNode.x}px`;
-            element.style.top = `${this.draggedNode.y}px`;
+        // 충돌 감지 및 해결
+        const resolvedPos = this.resolveCollision(this.draggedNode.id, this.draggedNode.x, this.draggedNode.y);
+        const deltaX = resolvedPos.x - this.draggedNode.x;
+        const deltaY = resolvedPos.y - this.draggedNode.y;
 
-            // 다중 선택된 노드들도 스냅
-            if (this.selectedNodes.size > 1 && this.selectedNodes.has(this.draggedNode.id)) {
-                this.selectedNodes.forEach(nodeId => {
+        this.draggedNode.x = resolvedPos.x;
+        this.draggedNode.y = resolvedPos.y;
+
+        // 위치 업데이트
+        element.style.left = `${this.draggedNode.x}px`;
+        element.style.top = `${this.draggedNode.y}px`;
+
+        // 다중 선택된 노드들도 충돌 회피 델타 적용
+        if (this.selectedNodes.size > 1 && this.selectedNodes.has(this.draggedNode.id)) {
+            this.selectedNodes.forEach(nodeId => {
+                if (nodeId === this.draggedNode.id) return;
+
+                const node = this.nodes.get(nodeId);
+                if (node) {
+                    node.x += deltaX;
+                    node.y += deltaY;
+
+                    if (this.snapToGrid) {
+                        node.x = Math.round(node.x / this.gridSize) * this.gridSize;
+                        node.y = Math.round(node.y / this.gridSize) * this.gridSize;
+                    }
+
+                    const el = document.getElementById(nodeId);
+                    if (el) {
+                        el.style.left = `${node.x}px`;
+                        el.style.top = `${node.y}px`;
+                    }
+                }
+            });
+        }
+
+        // 그룹에 속한 다른 노드들도 충돌 회피 델타 적용
+        const draggedElement = document.getElementById(this.draggedNode.id);
+        if (draggedElement && draggedElement.dataset.groupId) {
+            const groupId = draggedElement.dataset.groupId;
+            const group = this.nodeGroups.find(g => g.id === groupId);
+
+            if (group) {
+                group.nodeIds.forEach(nodeId => {
                     if (nodeId === this.draggedNode.id) return;
+                    if (this.selectedNodes.size > 1 && this.selectedNodes.has(nodeId)) return;
 
                     const node = this.nodes.get(nodeId);
                     if (node) {
-                        node.x = Math.round(node.x / this.gridSize) * this.gridSize;
-                        node.y = Math.round(node.y / this.gridSize) * this.gridSize;
+                        node.x += deltaX;
+                        node.y += deltaY;
+
+                        if (this.snapToGrid) {
+                            node.x = Math.round(node.x / this.gridSize) * this.gridSize;
+                            node.y = Math.round(node.y / this.gridSize) * this.gridSize;
+                        }
 
                         const el = document.getElementById(nodeId);
                         if (el) {
@@ -782,10 +999,10 @@ class OrgChartApp {
                     }
                 });
             }
-
-            // 연결선 다시 그리기
-            this.updateConnections();
         }
+
+        // 연결선 다시 그리기
+        this.updateConnections();
 
         this.draggedNode = null;
         this.saveState();
