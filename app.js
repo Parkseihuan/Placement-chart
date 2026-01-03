@@ -831,53 +831,60 @@ class OrgChartApp {
         const childWidth = childEl.offsetWidth;
         const childHeight = childEl.offsetHeight;
 
+        // chartHeader의 높이를 가져와서 offset으로 사용
+        // SVG는 canvas-container의 (0,0)에 위치하지만
+        // orgChart는 chartHeader 아래에 위치하므로 offset 필요
+        const chartHeader = document.getElementById('chartHeader');
+        const headerOffset = chartHeader ? chartHeader.offsetHeight : 0;
+
         // SVG와 노드가 같은 transform으로 스케일되므로 node.x, node.y를 직접 사용
+        // y 좌표에는 headerOffset을 더해서 SVG 좌표계로 변환
         let startX, startY, endX, endY;
 
         // 부모 앵커 포인트
         switch (startDirection) {
             case 'top':
                 startX = parent.x + parentWidth / 2;
-                startY = parent.y;
+                startY = parent.y + headerOffset;
                 break;
             case 'bottom':
                 startX = parent.x + parentWidth / 2;
-                startY = parent.y + parentHeight;
+                startY = parent.y + parentHeight + headerOffset;
                 break;
             case 'left':
                 startX = parent.x;
-                startY = parent.y + parentHeight / 2;
+                startY = parent.y + parentHeight / 2 + headerOffset;
                 break;
             case 'right':
                 startX = parent.x + parentWidth;
-                startY = parent.y + parentHeight / 2;
+                startY = parent.y + parentHeight / 2 + headerOffset;
                 break;
             default:
                 startX = parent.x + parentWidth / 2;
-                startY = parent.y + parentHeight;
+                startY = parent.y + parentHeight + headerOffset;
         }
 
         // 자식 앵커 포인트
         switch (endDirection) {
             case 'top':
                 endX = child.x + childWidth / 2;
-                endY = child.y;
+                endY = child.y + headerOffset;
                 break;
             case 'bottom':
                 endX = child.x + childWidth / 2;
-                endY = child.y + childHeight;
+                endY = child.y + childHeight + headerOffset;
                 break;
             case 'left':
                 endX = child.x;
-                endY = child.y + childHeight / 2;
+                endY = child.y + childHeight / 2 + headerOffset;
                 break;
             case 'right':
                 endX = child.x + childWidth;
-                endY = child.y + childHeight / 2;
+                endY = child.y + childHeight / 2 + headerOffset;
                 break;
             default:
                 endX = child.x + childWidth / 2;
-                endY = child.y;
+                endY = child.y + headerOffset;
         }
 
         const startPoint = { x: startX, y: startY };
