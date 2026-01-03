@@ -831,60 +831,54 @@ class OrgChartApp {
         const childWidth = childEl.offsetWidth;
         const childHeight = childEl.offsetHeight;
 
-        // chartHeader의 높이를 가져와서 offset으로 사용
-        // SVG는 canvas-container의 (0,0)에 위치하지만
-        // orgChart는 chartHeader 아래에 위치하므로 offset 필요
-        const chartHeader = document.getElementById('chartHeader');
-        const headerOffset = chartHeader ? chartHeader.offsetHeight : 0;
-
-        // SVG와 노드가 같은 transform으로 스케일되므로 node.x, node.y를 직접 사용
-        // y 좌표에는 headerOffset을 더해서 SVG 좌표계로 변환
+        // SVG와 노드가 같은 부모(orgChart)를 공유하고 같은 좌표계를 사용
+        // node.x, node.y를 직접 사용하면 됨
         let startX, startY, endX, endY;
 
         // 부모 앵커 포인트
         switch (startDirection) {
             case 'top':
                 startX = parent.x + parentWidth / 2;
-                startY = parent.y + headerOffset;
+                startY = parent.y;
                 break;
             case 'bottom':
                 startX = parent.x + parentWidth / 2;
-                startY = parent.y + parentHeight + headerOffset;
+                startY = parent.y + parentHeight;
                 break;
             case 'left':
                 startX = parent.x;
-                startY = parent.y + parentHeight / 2 + headerOffset;
+                startY = parent.y + parentHeight / 2;
                 break;
             case 'right':
                 startX = parent.x + parentWidth;
-                startY = parent.y + parentHeight / 2 + headerOffset;
+                startY = parent.y + parentHeight / 2;
                 break;
             default:
                 startX = parent.x + parentWidth / 2;
-                startY = parent.y + parentHeight + headerOffset;
+                startY = parent.y + parentHeight;
         }
 
         // 자식 앵커 포인트
         switch (endDirection) {
             case 'top':
                 endX = child.x + childWidth / 2;
-                endY = child.y + headerOffset;
+                endY = child.y;
                 break;
             case 'bottom':
                 endX = child.x + childWidth / 2;
-                endY = child.y + childHeight + headerOffset;
+                endY = child.y + childHeight;
                 break;
             case 'left':
                 endX = child.x;
-                endY = child.y + childHeight / 2 + headerOffset;
+                endY = child.y + childHeight / 2;
                 break;
             case 'right':
                 endX = child.x + childWidth;
-                endY = child.y + childHeight / 2 + headerOffset;
+                endY = child.y + childHeight / 2;
                 break;
             default:
                 endX = child.x + childWidth / 2;
-                endY = child.y + headerOffset;
+                endY = child.y;
         }
 
         const startPoint = { x: startX, y: startY };
@@ -2258,7 +2252,8 @@ class OrgChartApp {
         // Clamp zoom level
         this.zoomLevel = Math.max(this.minZoom, Math.min(this.maxZoom, level));
 
-        // Apply transform to chart, header, and SVG connections
+        // Apply transform to chart and header
+        // SVG is now a child of orgChart, so it inherits the transform automatically
         const transform = `scale(${this.zoomLevel})`;
         this.orgChart.style.transform = transform;
         this.orgChart.style.transformOrigin = 'top left';
@@ -2266,10 +2261,6 @@ class OrgChartApp {
         const chartHeader = document.getElementById('chartHeader');
         chartHeader.style.transform = transform;
         chartHeader.style.transformOrigin = 'top left';
-
-        // Apply same transform to SVG so lines scale with nodes
-        this.connections.style.transform = transform;
-        this.connections.style.transformOrigin = 'top left';
 
         // Update zoom level display
         const percentage = Math.round(this.zoomLevel * 100);
