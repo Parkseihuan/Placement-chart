@@ -187,9 +187,35 @@
             <div class="menu-item" data-action="edit">편집</div>
             <div class="menu-item" data-action="addChild">하위 부서 추가</div>
             <div class="menu-item" data-action="addSibling">형제 부서 추가</div>
+            <div class="menu-item" data-action="adjustPosition">📏 간격 조정</div>
             <div class="menu-item" data-action="toggleLock">🔒 위치 고정/해제</div>
             <div class="menu-item" data-action="removeFromGroup" style="display: none;">📌 그룹 해제</div>
             <div class="menu-item" data-action="delete">삭제</div>
+        </div>
+
+        <!-- 간격 조정 모달 -->
+        <div id="positionModal" class="modal hidden">
+            <div class="modal-content">
+                <h2>노드 위치 조정</h2>
+                <form id="positionForm">
+                    <div class="form-group">
+                        <label for="offsetUp">위로 (px)</label>
+                        <input type="number" id="offsetUp" value="0" step="10">
+                        <small class="form-hint">양수: 위로 이동, 음수: 아래로 이동</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="offsetRight">오른쪽으로 (px)</label>
+                        <input type="number" id="offsetRight" value="0" step="10">
+                        <small class="form-hint">양수: 오른쪽 이동, 음수: 왼쪽 이동</small>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">적용</button>
+                        <button type="button" id="cancelPositionBtn" class="btn btn-secondary">취소</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 

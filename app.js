@@ -74,6 +74,8 @@ class OrgChartApp {
         this.nodeForm = document.getElementById('nodeForm');
         this.spacingModal = document.getElementById('spacingModal');
         this.spacingForm = document.getElementById('spacingForm');
+        this.positionModal = document.getElementById('positionModal');
+        this.positionForm = document.getElementById('positionForm');
         this.versionModal = document.getElementById('versionModal');
         this.contextMenu = document.getElementById('contextMenu');
         this.modalTitle = document.getElementById('modalTitle');
@@ -105,6 +107,10 @@ class OrgChartApp {
         // Spacing modal events
         this.spacingForm.addEventListener('submit', (e) => this.handleSpacingFormSubmit(e));
         document.getElementById('cancelSpacingBtn').addEventListener('click', () => this.hideSpacingModal());
+
+        // Position modal events
+        this.positionForm.addEventListener('submit', (e) => this.handlePositionFormSubmit(e));
+        document.getElementById('cancelPositionBtn').addEventListener('click', () => this.hidePositionModal());
 
         // Version modal events
         document.getElementById('saveVersionBtn').addEventListener('click', () => this.saveCurrentVersion());
@@ -1081,6 +1087,55 @@ class OrgChartApp {
         alert(`간격이 설정되었습니다.\n수평: ${this.horizontalSpacing}px, 수직: ${this.verticalSpacing}px, 직원 항목: ${this.memberGap}px\n\n자동 배치를 클릭하여 노드 간격을 적용하세요.`);
     }
 
+    // Position Adjustment Modal
+    showPositionModal(nodeId) {
+        this.positionForm.dataset.nodeId = nodeId;
+        document.getElementById('offsetUp').value = 0;
+        document.getElementById('offsetRight').value = 0;
+        this.positionModal.classList.remove('hidden');
+        document.getElementById('offsetUp').focus();
+    }
+
+    hidePositionModal() {
+        this.positionModal.classList.add('hidden');
+        this.positionForm.reset();
+        delete this.positionForm.dataset.nodeId;
+    }
+
+    handlePositionFormSubmit(e) {
+        e.preventDefault();
+
+        const nodeId = this.positionForm.dataset.nodeId;
+        const node = this.nodes.get(nodeId);
+        if (!node) return;
+
+        const offsetUp = parseInt(document.getElementById('offsetUp').value) || 0;
+        const offsetRight = parseInt(document.getElementById('offsetRight').value) || 0;
+
+        // 위로 = y 감소, 아래로 = y 증가
+        // 오른쪽 = x 증가, 왼쪽 = x 감소
+        node.x = Math.max(0, node.x + offsetRight);
+        node.y = Math.max(0, node.y - offsetUp);
+
+        // 그리드 스냅 적용
+        if (this.snapToGrid) {
+            node.x = Math.round(node.x / this.gridSize) * this.gridSize;
+            node.y = Math.round(node.y / this.gridSize) * this.gridSize;
+        }
+
+        // UI 업데이트
+        const element = document.getElementById(nodeId);
+        if (element) {
+            element.style.left = `${node.x}px`;
+            element.style.top = `${node.y}px`;
+        }
+
+        this.updateConnections();
+        this.hidePositionModal();
+        this.saveState();
+        this.saveToLocalStorage();
+    }
+
     applyMemberGap() {
         // Apply padding to all member items dynamically
         const style = document.createElement('style');
@@ -1329,6 +1384,9 @@ class OrgChartApp {
             case 'addSibling':
                 this.showAddSiblingModal(nodeId);
                 break;
+            case 'adjustPosition':
+                this.showPositionModal(nodeId);
+                break;
             case 'toggleLock':
                 this.toggleNodeLock(nodeId);
                 break;
@@ -1469,6 +1527,7 @@ class OrgChartApp {
         if (e.key === 'Escape') {
             this.hideModal();
             this.hideSpacingModal();
+            this.hidePositionModal();
             this.hideVersionModal();
             this.hideContextMenu();
             this.deselectAll();
