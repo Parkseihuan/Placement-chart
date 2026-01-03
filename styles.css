@@ -465,6 +465,88 @@ body {
     margin-left: 4px;
 }
 
+/* Quick Copy Buttons */
+.quick-copy-buttons {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.org-node:hover .quick-copy-buttons {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.quick-copy-btn {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border: 2px solid #2EAADC;
+    background: white;
+    border-radius: 50%;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #2EAADC;
+    transition: all 0.15s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+}
+
+.quick-copy-btn:hover {
+    background: #2EAADC;
+    color: white;
+    transform: scale(1.15);
+    box-shadow: 0 3px 12px rgba(46, 170, 220, 0.4);
+}
+
+.quick-copy-btn:active {
+    transform: scale(1.0);
+}
+
+.quick-copy-top {
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.quick-copy-top:hover {
+    transform: translateX(-50%) scale(1.15);
+}
+
+.quick-copy-right {
+    top: 50%;
+    right: -14px;
+    transform: translateY(-50%);
+}
+
+.quick-copy-right:hover {
+    transform: translateY(-50%) scale(1.15);
+}
+
+.quick-copy-bottom {
+    bottom: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.quick-copy-bottom:hover {
+    transform: translateX(-50%) scale(1.15);
+}
+
+.quick-copy-left {
+    top: 50%;
+    left: -14px;
+    transform: translateY(-50%);
+}
+
+.quick-copy-left:hover {
+    transform: translateY(-50%) scale(1.15);
+}
+
 /* Connection Anchors (연결점) */
 .connection-anchor {
     position: absolute;

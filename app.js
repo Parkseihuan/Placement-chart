@@ -220,11 +220,25 @@ class OrgChartApp {
         element.innerHTML = `
             <div class="node-header">${this.escapeHtml(node.deptName)}</div>
             ${bodyHtml}
+            <div class="quick-copy-buttons">
+                <button class="quick-copy-btn quick-copy-top" data-direction="top" title="위로 복사">↑</button>
+                <button class="quick-copy-btn quick-copy-right" data-direction="right" title="오른쪽으로 복사">→</button>
+                <button class="quick-copy-btn quick-copy-bottom" data-direction="bottom" title="아래로 복사">↓</button>
+                <button class="quick-copy-btn quick-copy-left" data-direction="left" title="왼쪽으로 복사">←</button>
+            </div>
         `;
 
         element.addEventListener('mousedown', (e) => this.handleNodeMouseDown(e, node.id));
         element.addEventListener('contextmenu', (e) => this.showContextMenu(e, node.id));
         element.addEventListener('dblclick', () => this.editNode(node.id));
+
+        // 빠른 복사 버튼 이벤트
+        element.querySelectorAll('.quick-copy-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.quickCopyNode(node.id, btn.dataset.direction);
+            });
+        });
 
         this.orgChart.appendChild(element);
     }
@@ -1357,6 +1371,53 @@ class OrgChartApp {
 
     editNode(nodeId) {
         this.showEditNodeModal(nodeId);
+    }
+
+    quickCopyNode(nodeId, direction) {
+        const sourceNode = this.nodes.get(nodeId);
+        if (!sourceNode) return;
+
+        // 복사할 노드 데이터 생성 (같은 위계의 형제 노드)
+        const offset = 200; // 기본 간격
+        let newX = sourceNode.x;
+        let newY = sourceNode.y;
+
+        // 방향에 따라 위치 계산
+        switch (direction) {
+            case 'top':
+                newY = sourceNode.y - offset;
+                break;
+            case 'bottom':
+                newY = sourceNode.y + offset;
+                break;
+            case 'left':
+                newX = sourceNode.x - offset;
+                break;
+            case 'right':
+                newX = sourceNode.x + offset;
+                break;
+        }
+
+        // 그리드 스냅 적용
+        if (this.snapToGrid) {
+            newX = Math.round(newX / this.gridSize) * this.gridSize;
+            newY = Math.round(newY / this.gridSize) * this.gridSize;
+        }
+
+        // 노드 데이터 복사
+        const newNodeData = {
+            deptName: sourceNode.deptName + ' (복사)',
+            members: sourceNode.members ? [...sourceNode.members] : [],
+            parentId: sourceNode.parentId, // 같은 부모 (형제 노드)
+            isIndependent: sourceNode.isIndependent,
+            layoutDirection: sourceNode.layoutDirection,
+            connectionStart: sourceNode.connectionStart,
+            connectionEnd: sourceNode.connectionEnd,
+            x: Math.max(0, newX),
+            y: Math.max(0, newY)
+        };
+
+        this.createNode(newNodeData);
     }
 
     // Global Event Handlers
