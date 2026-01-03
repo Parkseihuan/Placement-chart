@@ -1989,6 +1989,14 @@ class OrgChartApp {
                     members = [{ position: nodeData.position || '', name: nodeData.personName || '' }];
                 }
 
+                // 그리드 스냅 적용
+                let x = nodeData.x;
+                let y = nodeData.y;
+                if (this.snapToGrid) {
+                    x = Math.round(x / this.gridSize) * this.gridSize;
+                    y = Math.round(y / this.gridSize) * this.gridSize;
+                }
+
                 const node = {
                     id: nodeData.id,
                     deptName: nodeData.deptName,
@@ -1999,12 +2007,31 @@ class OrgChartApp {
                     locked: nodeData.locked || false,
                     connectionStart: nodeData.connectionStart || 'bottom',
                     connectionEnd: nodeData.connectionEnd || 'top',
-                    x: nodeData.x,
-                    y: nodeData.y
+                    x: x,
+                    y: y
                 };
                 this.nodes.set(node.id, node);
                 this.renderNode(node);
             });
+
+            // 모든 노드 렌더링 후 충돌 해결
+            if (this.enableCollisionDetection) {
+                data.nodes.forEach(nodeData => {
+                    const node = this.nodes.get(nodeData.id);
+                    if (node) {
+                        const resolvedPos = this.resolveCollision(node.id, node.x, node.y);
+                        if (resolvedPos.x !== node.x || resolvedPos.y !== node.y) {
+                            node.x = resolvedPos.x;
+                            node.y = resolvedPos.y;
+                            const element = document.getElementById(node.id);
+                            if (element) {
+                                element.style.left = `${node.x}px`;
+                                element.style.top = `${node.y}px`;
+                            }
+                        }
+                    }
+                });
+            }
 
             this.updateConnections();
 
@@ -2115,6 +2142,14 @@ class OrgChartApp {
                         members = [{ position: nodeData.position || '', name: nodeData.personName || '' }];
                     }
 
+                    // 그리드 스냅 적용
+                    let x = nodeData.x;
+                    let y = nodeData.y;
+                    if (this.snapToGrid) {
+                        x = Math.round(x / this.gridSize) * this.gridSize;
+                        y = Math.round(y / this.gridSize) * this.gridSize;
+                    }
+
                     const node = {
                         id: nodeData.id,
                         deptName: nodeData.deptName,
@@ -2125,12 +2160,31 @@ class OrgChartApp {
                         locked: nodeData.locked || false,
                         connectionStart: nodeData.connectionStart || 'bottom',
                         connectionEnd: nodeData.connectionEnd || 'top',
-                        x: nodeData.x,
-                        y: nodeData.y
+                        x: x,
+                        y: y
                     };
                     this.nodes.set(node.id, node);
                     this.renderNode(node);
                 });
+
+                // 모든 노드 렌더링 후 충돌 해결
+                if (this.enableCollisionDetection) {
+                    data.nodes.forEach(nodeData => {
+                        const node = this.nodes.get(nodeData.id);
+                        if (node) {
+                            const resolvedPos = this.resolveCollision(node.id, node.x, node.y);
+                            if (resolvedPos.x !== node.x || resolvedPos.y !== node.y) {
+                                node.x = resolvedPos.x;
+                                node.y = resolvedPos.y;
+                                const element = document.getElementById(node.id);
+                                if (element) {
+                                    element.style.left = `${node.x}px`;
+                                    element.style.top = `${node.y}px`;
+                                }
+                            }
+                        }
+                    });
+                }
 
                 this.updateConnections();
 

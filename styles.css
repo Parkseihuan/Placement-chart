@@ -169,7 +169,7 @@ body {
     position: relative;
     overflow: auto;
     background-color: #F7F6F3;
-    background-image: radial-gradient(circle, #D3D3D0 1px, transparent 1px);
+    background-image: radial-gradient(circle, #B8B7B4 1.5px, transparent 1.5px);
     background-size: 10px 10px;
 }
 
@@ -468,6 +468,10 @@ body {
 /* Quick Copy Buttons */
 .quick-copy-buttons {
     position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.2s ease;
