@@ -703,11 +703,39 @@ body {
 .member-info {
     font-size: 14px;
     color: #37352F;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 .member-info strong {
     color: #787774;
-    margin-right: 8px;
+}
+
+.member-type-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.member-type-staff {
+    background: #E3E2E0;
+    color: #37352F;
+}
+
+.member-type-faculty {
+    background: #DFE6F5;
+    color: #2E5AAC;
+}
+
+.member-note {
+    color: #9B9A97;
+    font-size: 12px;
+    font-style: italic;
 }
 
 .btn-remove {
@@ -732,12 +760,14 @@ body {
 }
 
 .member-add-form {
-    display: flex;
+    display: grid;
+    grid-template-columns: 80px 120px 120px 1fr auto;
     gap: 8px;
+    align-items: center;
 }
 
+.member-add-form select,
 .member-add-form input {
-    flex: 1;
     padding: 10px 12px;
     border: 1px solid #E9E9E7;
     border-radius: 3px;
@@ -745,6 +775,7 @@ body {
     transition: border 0.15s ease, box-shadow 0.15s ease;
 }
 
+.member-add-form select:focus,
 .member-add-form input:focus {
     outline: none;
     border-color: #37352F;

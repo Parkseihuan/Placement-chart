@@ -1076,20 +1076,29 @@ class OrgChartApp {
 
     // Member Management
     addMember() {
+        const type = document.getElementById('memberType').value;
         const position = document.getElementById('memberPosition').value.trim();
         const name = document.getElementById('memberName').value.trim();
+        const note = document.getElementById('memberNote').value.trim();
 
         if (!position && !name) {
             alert('보직 또는 성명을 입력해주세요.');
             return;
         }
 
-        this.currentMembers.push({ position, name });
+        this.currentMembers.push({
+            type: type || 'staff',
+            position,
+            name,
+            note: note || ''
+        });
         this.renderMembersList();
 
         // Clear inputs
+        document.getElementById('memberType').value = 'staff';
         document.getElementById('memberPosition').value = '';
         document.getElementById('memberName').value = '';
+        document.getElementById('memberNote').value = '';
         document.getElementById('memberPosition').focus();
     }
 
@@ -1103,19 +1112,26 @@ class OrgChartApp {
         if (!membersList) return;
 
         if (this.currentMembers.length === 0) {
-            membersList.innerHTML = '<div class="members-empty">직원이 없습니다. 아래에서 추가해주세요.</div>';
+            membersList.innerHTML = '<div class="members-empty">교직원이 없습니다. 아래에서 추가해주세요.</div>';
             return;
         }
 
-        membersList.innerHTML = this.currentMembers.map((member, index) => `
+        membersList.innerHTML = this.currentMembers.map((member, index) => {
+            const typeLabel = (member.type === 'faculty') ? '교원' : '직원';
+            const typeBadge = `<span class="member-type-badge member-type-${member.type || 'staff'}">${typeLabel}</span>`;
+            const noteText = member.note ? `<span class="member-note">${this.escapeHtml(member.note)}</span>` : '';
+
+            return `
             <div class="member-list-item">
                 <span class="member-info">
+                    ${typeBadge}
                     <strong>${this.escapeHtml(member.position)}</strong>
                     ${this.escapeHtml(member.name)}
+                    ${noteText}
                 </span>
                 <button type="button" class="btn-remove" onclick="window.orgChartApp.removeMember(${index})" title="삭제">×</button>
             </div>
-        `).join('');
+        `}).join('');
     }
 
     handleFormSubmit(e) {

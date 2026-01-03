@@ -83,13 +83,18 @@
                     </div>
 
                     <div class="form-group">
-                        <label>직원 목록</label>
+                        <label>교직원 목록</label>
                         <div id="membersList" class="members-list">
-                            <!-- 직원 목록이 동적으로 추가됨 -->
+                            <!-- 교직원 목록이 동적으로 추가됨 -->
                         </div>
                         <div class="member-add-form">
+                            <select id="memberType">
+                                <option value="staff">직원</option>
+                                <option value="faculty">교원</option>
+                            </select>
                             <input type="text" id="memberPosition" placeholder="보직 (예: 과장)">
                             <input type="text" id="memberName" placeholder="성명 (예: 홍길동)">
+                            <input type="text" id="memberNote" placeholder="비고 (선택사항)">
                             <button type="button" id="addMemberBtn" class="btn btn-small">+ 추가</button>
                         </div>
                     </div>
