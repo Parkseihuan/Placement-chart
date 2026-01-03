@@ -824,12 +824,12 @@ class OrgChartApp {
         const startDirection = child.connectionStart || 'bottom';
         const endDirection = child.connectionEnd || 'top';
 
-        // 노드의 실제 크기 가져오기 (스케일 적용 전 크기)
-        // offsetWidth/Height는 스케일 후 크기이므로 zoomLevel로 나눠서 원본 크기 구함
-        const parentWidth = parentEl.offsetWidth / this.zoomLevel;
-        const parentHeight = parentEl.offsetHeight / this.zoomLevel;
-        const childWidth = childEl.offsetWidth / this.zoomLevel;
-        const childHeight = childEl.offsetHeight / this.zoomLevel;
+        // 노드의 실제 크기 가져오기
+        // offsetWidth/Height는 CSS transform의 영향을 받지 않으므로 원본 크기를 반환함
+        const parentWidth = parentEl.offsetWidth;
+        const parentHeight = parentEl.offsetHeight;
+        const childWidth = childEl.offsetWidth;
+        const childHeight = childEl.offsetHeight;
 
         // SVG와 노드가 같은 transform으로 스케일되므로 node.x, node.y를 직접 사용
         let startX, startY, endX, endY;
