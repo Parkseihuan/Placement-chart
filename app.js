@@ -282,9 +282,17 @@ class OrgChartApp {
     }
 
     deleteNode(nodeId) {
-        // Delete all children first
+        const nodeToDelete = this.nodes.get(nodeId);
+        if (!nodeToDelete) return;
+
+        // 자식 노드들의 위계 조정: 삭제되는 노드의 부모를 자식들의 새 부모로 설정
         const children = this.getChildren(nodeId);
-        children.forEach(child => this.deleteNode(child.id));
+        const newParentId = nodeToDelete.parentId; // 삭제되는 노드의 부모
+
+        children.forEach(child => {
+            child.parentId = newParentId; // 위계를 한 단계 올림
+            this.updateNodeElement(child); // UI 업데이트
+        });
 
         // Remove from DOM
         const element = document.getElementById(nodeId);
@@ -1318,7 +1326,7 @@ class OrgChartApp {
                 }
                 break;
             case 'delete':
-                if (confirm('이 부서와 모든 하위 부서를 삭제하시겠습니까?')) {
+                if (confirm('이 부서를 삭제하시겠습니까?\n(하위 부서는 한 단계 위로 이동됩니다)')) {
                     this.deleteNode(nodeId);
                 }
                 break;
@@ -1407,7 +1415,7 @@ class OrgChartApp {
 
         if (e.key === 'Delete' && this.selectedNode && !this.nodeModal.classList.contains('hidden') === false) {
             if (document.activeElement.tagName !== 'INPUT') {
-                if (confirm('이 부서와 모든 하위 부서를 삭제하시겠습니까?')) {
+                if (confirm('이 부서를 삭제하시겠습니까?\n(하위 부서는 한 단계 위로 이동됩니다)')) {
                     this.deleteNode(this.selectedNode);
                 }
             }
