@@ -74,12 +74,6 @@ class OrgChartApp {
         this.contextMenu = document.getElementById('contextMenu');
         this.modalTitle = document.getElementById('modalTitle');
         this.fileInput = document.getElementById('fileInput');
-
-        // Position SVG to align with orgChart initially
-        const chartHeader = document.getElementById('chartHeader');
-        if (chartHeader) {
-            this.connections.style.top = `${chartHeader.offsetHeight}px`;
-        }
     }
 
     initEventListeners() {
@@ -837,8 +831,8 @@ class OrgChartApp {
         const childWidth = childEl.offsetWidth;
         const childHeight = childEl.offsetHeight;
 
-        // SVG는 chartHeader 아래에 위치하고 orgChart와 같은 transform 적용
-        // SVG와 orgChart가 같은 좌표계를 공유하므로 node.x, node.y를 직접 사용
+        // SVG는 orgChart의 자식으로 같은 좌표계 공유
+        // node.x, node.y를 직접 SVG 좌표로 사용
         let startX, startY, endX, endY;
 
         // 부모 앵커 포인트
@@ -2259,6 +2253,7 @@ class OrgChartApp {
         this.zoomLevel = Math.max(this.minZoom, Math.min(this.maxZoom, level));
 
         // Apply transform to chart and header
+        // SVG is now a child of orgChart so it inherits the transform automatically
         const transform = `scale(${this.zoomLevel})`;
         this.orgChart.style.transform = transform;
         this.orgChart.style.transformOrigin = 'top left';
@@ -2266,12 +2261,6 @@ class OrgChartApp {
         const chartHeader = document.getElementById('chartHeader');
         chartHeader.style.transform = transform;
         chartHeader.style.transformOrigin = 'top left';
-
-        // Position SVG to align with orgChart and apply same transform
-        const headerHeight = chartHeader.offsetHeight;
-        this.connections.style.top = `${headerHeight}px`;
-        this.connections.style.transform = transform;
-        this.connections.style.transformOrigin = 'top left';
 
         // Update zoom level display
         const percentage = Math.round(this.zoomLevel * 100);
