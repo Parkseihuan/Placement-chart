@@ -1008,6 +1008,10 @@ class OrgChartApp {
         const layoutRadio = document.querySelector(`input[name="layoutDirection"][value="${layoutDirection}"]`);
         if (layoutRadio) layoutRadio.checked = true;
 
+        // 연결 지점 설정
+        document.getElementById('connectionStart').value = node.connectionStart || 'bottom';
+        document.getElementById('connectionEnd').value = node.connectionEnd || 'top';
+
         // 기존 멤버 목록 로드
         this.currentMembers = node.members ? [...node.members] : [];
         this.renderMembersList();
@@ -1144,7 +1148,9 @@ class OrgChartApp {
             deptName: document.getElementById('deptName').value.trim(),
             members: [...this.currentMembers], // 현재 편집 중인 직원 목록 사용
             isIndependent: document.getElementById('isIndependent').checked,
-            layoutDirection: layoutDirection
+            layoutDirection: layoutDirection,
+            connectionStart: document.getElementById('connectionStart').value,
+            connectionEnd: document.getElementById('connectionEnd').value
         };
 
         const mode = this.nodeForm.dataset.mode;

@@ -646,6 +646,39 @@ body {
     font-size: 14px;
 }
 
+.connection-points-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 8px;
+}
+
+.connection-points-grid > div label {
+    display: block;
+    font-size: 13px;
+    color: #787774;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.connection-points-grid select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #E9E9E7;
+    border-radius: 3px;
+    font-size: 13px;
+    color: #37352F;
+    background: white;
+    cursor: pointer;
+    transition: border 0.15s ease, box-shadow 0.15s ease;
+}
+
+.connection-points-grid select:focus {
+    outline: none;
+    border-color: #37352F;
+    box-shadow: 0 0 0 2px rgba(55, 53, 47, 0.1);
+}
+
 .form-actions {
     display: flex;
     gap: 10px;

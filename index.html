@@ -83,6 +83,33 @@
                     </div>
 
                     <div class="form-group">
+                        <label class="group-label">연결 지점 설정</label>
+                        <div class="connection-points-grid">
+                            <div>
+                                <label for="connectionEnd">부모로부터 연결</label>
+                                <select id="connectionEnd">
+                                    <option value="top">↑ 12시 (위)</option>
+                                    <option value="right">→ 3시 (오른쪽)</option>
+                                    <option value="bottom">↓ 6시 (아래)</option>
+                                    <option value="left">← 9시 (왼쪽)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="connectionStart">자식으로 연결</label>
+                                <select id="connectionStart">
+                                    <option value="top">↑ 12시 (위)</option>
+                                    <option value="right">→ 3시 (오른쪽)</option>
+                                    <option value="bottom">↓ 6시 (아래)</option>
+                                    <option value="left">← 9시 (왼쪽)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <small class="form-hint">
+                            ※ 연결선이 노드의 어느 방향에서 연결될지 설정합니다
+                        </small>
+                    </div>
+
+                    <div class="form-group">
                         <label>교직원 목록</label>
                         <div id="membersList" class="members-list">
                             <!-- 교직원 목록이 동적으로 추가됨 -->
