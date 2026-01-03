@@ -436,45 +436,33 @@ body {
 
 /* Horizontal Layout for Members */
 .org-node.layout-horizontal .node-body {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 12px;
+    padding: 12px 14px;
     background: white;
+    text-align: center;
 }
 
 .org-node.layout-horizontal .member-item {
     border-bottom: none !important;
-    border: 1px solid #E9E9E7;
-    border-radius: 3px;
-    padding: 6px 12px;
-    background: white;
-    flex: 0 0 auto;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    padding: 0;
+    display: inline;
+    background: transparent;
+    margin: 0 8px;
 }
 
 .org-node.layout-horizontal .member-item:hover {
-    background: #FAFAFA;
+    background: transparent;
 }
 
 .org-node.layout-horizontal .member-item .member-position {
-    min-width: auto;
-    font-size: 12px;
+    font-size: 13px;
+    font-weight: 600;
     color: #787774;
 }
 
 .org-node.layout-horizontal .member-item .member-name {
-    margin-left: 0;
-    font-size: 12px;
+    font-size: 13px;
     color: #37352F;
-}
-
-.org-node.layout-horizontal .member-item .member-position::after {
-    content: ":";
-    margin-left: 2px;
+    margin-left: 4px;
 }
 
 /* Connection Anchors (연결점) */
