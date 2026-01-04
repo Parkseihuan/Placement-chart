@@ -494,8 +494,8 @@ class OrgChartApp {
 
         this.isPanning = true;
         this.panStart = {
-            x: e.clientX - this.canvasContainer.scrollLeft,
-            y: e.clientY - this.canvasContainer.scrollTop
+            x: e.clientX + this.canvasContainer.scrollLeft,
+            y: e.clientY + this.canvasContainer.scrollTop
         };
         this.canvasContainer.style.cursor = 'grabbing';
         e.preventDefault();
@@ -847,10 +847,8 @@ class OrgChartApp {
 
         // 캔버스 패닝 처리
         if (this.isPanning) {
-            const x = e.clientX - this.panStart.x;
-            const y = e.clientY - this.panStart.y;
-            this.canvasContainer.scrollLeft = -x;
-            this.canvasContainer.scrollTop = -y;
+            this.canvasContainer.scrollLeft = this.panStart.x - e.clientX;
+            this.canvasContainer.scrollTop = this.panStart.y - e.clientY;
             return;
         }
 
