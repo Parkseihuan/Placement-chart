@@ -61,12 +61,13 @@ class OrgChartApp {
 
         // 충돌 감지
         this.enableCollisionDetection = true; // 충돌 감지 활성화
-        this.collisionPadding = 20; // 노드 간 최소 간격 (px)
+        this.collisionPadding = 10; // 노드 간 최소 간격 (px) - 1 격자선
 
         this.initElements();
         this.initEventListeners();
         this.loadVersionsFromLocalStorage();
         this.loadFromLocalStorage();
+        this.applyMemberGap(); // 교직원 간격 초기 적용
         this.saveState(); // 초기 상태 저장
     }
 
