@@ -64,6 +64,7 @@ class OrgChartApp {
         this.collisionPadding = 10; // 노드 간 최소 간격 (px) - 1 격자선
 
         this.initElements();
+        this.ensureSVG(); // SVG 요소 확인 및 생성
         this.initEventListeners();
         this.loadVersionsFromLocalStorage();
         this.loadFromLocalStorage();
@@ -351,6 +352,29 @@ class OrgChartApp {
             }
         });
         return children;
+    }
+
+    clearChart() {
+        // 노드만 삭제하고 SVG는 유지
+        const nodes = this.orgChart.querySelectorAll('.org-node');
+        nodes.forEach(node => node.remove());
+
+        // 연결선 초기화
+        if (this.connections) {
+            this.connections.innerHTML = '';
+        }
+
+        this.nodes.clear();
+    }
+
+    ensureSVG() {
+        // SVG가 없으면 다시 생성
+        if (!this.connections || !document.getElementById('connections')) {
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.id = 'connections';
+            this.orgChart.insertBefore(svg, this.orgChart.firstChild);
+            this.connections = svg;
+        }
     }
 
     // Connection Anchor Drag (연결점 드래그)
@@ -1814,8 +1838,8 @@ class OrgChartApp {
 
     restoreState(state) {
         // 기존 노드 모두 제거
-        this.orgChart.innerHTML = '';
-        this.nodes.clear();
+        this.clearChart();
+        this.ensureSVG();
 
         // 상태 복원
         this.nextId = state.nextId;
@@ -1979,8 +2003,8 @@ class OrgChartApp {
             }
 
             // Clear existing
-            this.orgChart.innerHTML = '';
-            this.nodes.clear();
+            this.clearChart();
+            this.ensureSVG();
 
             // Recreate nodes
             data.nodes.forEach(nodeData => {
@@ -2104,8 +2128,8 @@ class OrgChartApp {
                 const data = JSON.parse(event.target.result);
 
                 // Clear existing
-                this.orgChart.innerHTML = '';
-                this.nodes.clear();
+                this.clearChart();
+                this.ensureSVG();
 
                 this.nextId = data.nextId || 1;
 
@@ -2402,8 +2426,8 @@ class OrgChartApp {
         }
 
         // Clear existing
-        this.orgChart.innerHTML = '';
-        this.nodes.clear();
+        this.clearChart();
+        this.ensureSVG();
         this.nextId = 1;
 
         // Reset headers
@@ -2574,8 +2598,8 @@ class OrgChartApp {
         const data = version.data;
 
         // Clear existing
-        this.orgChart.innerHTML = '';
-        this.nodes.clear();
+        this.clearChart();
+        this.ensureSVG();
 
         this.nextId = data.nextId || 1;
 
