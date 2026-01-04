@@ -61,7 +61,7 @@ class OrgChartApp {
 
         // 충돌 감지
         this.enableCollisionDetection = true; // 충돌 감지 활성화
-        this.collisionPadding = 10; // 노드 간 최소 간격 (px) - 1 격자선
+        this.collisionPadding = 5; // 노드 간 최소 간격 (px) - 매우 가깝게
 
         this.initElements();
         this.ensureSVG(); // SVG 요소 확인 및 생성
