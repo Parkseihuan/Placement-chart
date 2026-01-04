@@ -764,8 +764,8 @@ class OrgChartApp {
             }
         }
 
-        // 충돌을 해결할 수 없는 경우, 원래 위치 유지
-        return { x: node.x, y: node.y };
+        // 충돌을 해결할 수 없는 경우, 사용자가 드래그한 위치 유지
+        return { x: proposedX, y: proposedY };
     }
 
     // Drag and Drop
@@ -957,20 +957,64 @@ class OrgChartApp {
         if (this.snapToGrid) {
             this.draggedNode.x = Math.round(this.draggedNode.x / this.gridSize) * this.gridSize;
             this.draggedNode.y = Math.round(this.draggedNode.y / this.gridSize) * this.gridSize;
+        }
 
-            // 위치 업데이트
-            element.style.left = `${this.draggedNode.x}px`;
-            element.style.top = `${this.draggedNode.y}px`;
+        // 충돌 감지 및 해결 (5px까지는 허용, 그 이상 겹치면 방지)
+        const resolvedPos = this.resolveCollision(this.draggedNode.id, this.draggedNode.x, this.draggedNode.y);
+        const deltaX = resolvedPos.x - this.draggedNode.x;
+        const deltaY = resolvedPos.y - this.draggedNode.y;
 
-            // 다중 선택된 노드들도 스냅
-            if (this.selectedNodes.size > 1 && this.selectedNodes.has(this.draggedNode.id)) {
-                this.selectedNodes.forEach(nodeId => {
+        this.draggedNode.x = resolvedPos.x;
+        this.draggedNode.y = resolvedPos.y;
+
+        // 위치 업데이트
+        element.style.left = `${this.draggedNode.x}px`;
+        element.style.top = `${this.draggedNode.y}px`;
+
+        // 다중 선택된 노드들도 충돌 회피 델타 적용
+        if (this.selectedNodes.size > 1 && this.selectedNodes.has(this.draggedNode.id)) {
+            this.selectedNodes.forEach(nodeId => {
+                if (nodeId === this.draggedNode.id) return;
+
+                const node = this.nodes.get(nodeId);
+                if (node) {
+                    node.x += deltaX;
+                    node.y += deltaY;
+
+                    if (this.snapToGrid) {
+                        node.x = Math.round(node.x / this.gridSize) * this.gridSize;
+                        node.y = Math.round(node.y / this.gridSize) * this.gridSize;
+                    }
+
+                    const el = document.getElementById(nodeId);
+                    if (el) {
+                        el.style.left = `${node.x}px`;
+                        el.style.top = `${node.y}px`;
+                    }
+                }
+            });
+        }
+
+        // 그룹에 속한 다른 노드들도 충돌 회피 델타 적용
+        const draggedElement = document.getElementById(this.draggedNode.id);
+        if (draggedElement && draggedElement.dataset.groupId) {
+            const groupId = draggedElement.dataset.groupId;
+            const group = this.nodeGroups.find(g => g.id === groupId);
+
+            if (group) {
+                group.nodeIds.forEach(nodeId => {
                     if (nodeId === this.draggedNode.id) return;
+                    if (this.selectedNodes.size > 1 && this.selectedNodes.has(nodeId)) return;
 
                     const node = this.nodes.get(nodeId);
                     if (node) {
-                        node.x = Math.round(node.x / this.gridSize) * this.gridSize;
-                        node.y = Math.round(node.y / this.gridSize) * this.gridSize;
+                        node.x += deltaX;
+                        node.y += deltaY;
+
+                        if (this.snapToGrid) {
+                            node.x = Math.round(node.x / this.gridSize) * this.gridSize;
+                            node.y = Math.round(node.y / this.gridSize) * this.gridSize;
+                        }
 
                         const el = document.getElementById(nodeId);
                         if (el) {
@@ -979,32 +1023,6 @@ class OrgChartApp {
                         }
                     }
                 });
-            }
-
-            // 그룹에 속한 다른 노드들도 스냅
-            const draggedElement = document.getElementById(this.draggedNode.id);
-            if (draggedElement && draggedElement.dataset.groupId) {
-                const groupId = draggedElement.dataset.groupId;
-                const group = this.nodeGroups.find(g => g.id === groupId);
-
-                if (group) {
-                    group.nodeIds.forEach(nodeId => {
-                        if (nodeId === this.draggedNode.id) return;
-                        if (this.selectedNodes.size > 1 && this.selectedNodes.has(nodeId)) return;
-
-                        const node = this.nodes.get(nodeId);
-                        if (node) {
-                            node.x = Math.round(node.x / this.gridSize) * this.gridSize;
-                            node.y = Math.round(node.y / this.gridSize) * this.gridSize;
-
-                            const el = document.getElementById(nodeId);
-                            if (el) {
-                                el.style.left = `${node.x}px`;
-                                el.style.top = `${node.y}px`;
-                            }
-                        }
-                    });
-                }
             }
         }
 
