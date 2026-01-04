@@ -240,8 +240,10 @@ body {
 /* Connection Lines */
 .connection-line {
     stroke: #37352F;
-    stroke-width: 2;
+    stroke-width: 2.5;
     fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 /* Chart Header */
