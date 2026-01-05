@@ -439,32 +439,36 @@ body {
     padding: 12px 14px;
     background: white;
     text-align: center;
+    display: block !important;
 }
 
 .org-node.layout-horizontal .member-item {
     border-bottom: none !important;
-    padding: 0;
+    padding: 0 !important;
     display: inline-block !important;
-    background: transparent;
-    margin: 0 8px;
+    background: transparent !important;
+    margin: 0 8px !important;
+    gap: 0 !important;
+    align-items: baseline !important;
+    flex-direction: row !important;
 }
 
 .org-node.layout-horizontal .member-item:hover {
-    background: transparent;
+    background: transparent !important;
 }
 
 .org-node.layout-horizontal .member-item .member-position {
     font-size: 13px;
     font-weight: 600;
     color: #787774;
-    display: inline;
+    display: inline !important;
 }
 
 .org-node.layout-horizontal .member-item .member-name {
     font-size: 13px;
     color: #37352F;
     margin-left: 4px;
-    display: inline;
+    display: inline !important;
 }
 
 /* Quick Copy Buttons */
