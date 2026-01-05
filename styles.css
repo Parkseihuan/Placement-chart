@@ -437,13 +437,14 @@ body {
 /* Horizontal Layout for Members */
 .org-node.layout-horizontal .node-body {
     padding: 12px 14px !important;
-    background: white !important;
+    background: #FFD700 !important; /* 테스트: 노란색 배경 */
     text-align: center !important;
     display: flex !important;
     flex-direction: row !important;
     flex-wrap: wrap !important;
     justify-content: center !important;
     gap: 8px !important;
+    border: 3px solid red !important; /* 테스트: 빨간 테두리 */
 }
 
 .org-node.layout-horizontal .member-item {
