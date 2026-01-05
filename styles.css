@@ -444,7 +444,7 @@ body {
 .org-node.layout-horizontal .member-item {
     border-bottom: none !important;
     padding: 0;
-    display: inline;
+    display: inline-block !important;
     background: transparent;
     margin: 0 8px;
 }
@@ -457,12 +457,14 @@ body {
     font-size: 13px;
     font-weight: 600;
     color: #787774;
+    display: inline;
 }
 
 .org-node.layout-horizontal .member-item .member-name {
     font-size: 13px;
     color: #37352F;
     margin-left: 4px;
+    display: inline;
 }
 
 /* Quick Copy Buttons */
