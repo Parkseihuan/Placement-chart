@@ -1196,7 +1196,11 @@ class OrgChartApp {
         if ((startDirection === 'top' || startDirection === 'bottom') &&
             (endDirection === 'top' || endDirection === 'bottom')) {
             // 수직-수평-수직 패턴
-            const midY = (startPoint.y + endPoint.y) / 2;
+            let midY = (startPoint.y + endPoint.y) / 2;
+
+            // 중간 지점이 다른 노드와 충돌하는지 확인하고 조정
+            midY = this.adjustPathToAvoidNodes(startPoint.x, endPoint.x, midY, parent.id, child.id, 'horizontal');
+
             d = `M ${startPoint.x} ${startPoint.y}
                  L ${startPoint.x} ${midY}
                  L ${endPoint.x} ${midY}
@@ -1204,7 +1208,11 @@ class OrgChartApp {
         } else if ((startDirection === 'left' || startDirection === 'right') &&
                    (endDirection === 'left' || endDirection === 'right')) {
             // 수평-수직-수평 패턴
-            const midX = (startPoint.x + endPoint.x) / 2;
+            let midX = (startPoint.x + endPoint.x) / 2;
+
+            // 중간 지점이 다른 노드와 충돌하는지 확인하고 조정
+            midX = this.adjustPathToAvoidNodes(startPoint.y, endPoint.y, midX, parent.id, child.id, 'vertical');
+
             d = `M ${startPoint.x} ${startPoint.y}
                  L ${midX} ${startPoint.y}
                  L ${midX} ${endPoint.y}
@@ -1222,6 +1230,69 @@ class OrgChartApp {
         path.setAttribute('class', 'connection-line');
 
         this.connections.appendChild(path);
+    }
+
+    // 연결선이 노드를 피하도록 경로 조정
+    adjustPathToAvoidNodes(start, end, mid, parentId, childId, direction) {
+        const minCoord = Math.min(start, end);
+        const maxCoord = Math.max(start, end);
+        const margin = 10; // 노드 주변 여백
+
+        // 모든 노드를 확인
+        for (const [nodeId, node] of this.nodes) {
+            // 부모와 자식 노드는 제외
+            if (nodeId === parentId || nodeId === childId) continue;
+
+            const nodeEl = document.getElementById(nodeId);
+            if (!nodeEl) continue;
+
+            const nodeWidth = nodeEl.offsetWidth;
+            const nodeHeight = nodeEl.offsetHeight;
+
+            if (direction === 'horizontal') {
+                // 수평선이 노드와 충돌하는지 확인
+                const nodeTop = node.y - margin;
+                const nodeBottom = node.y + nodeHeight + margin;
+                const nodeLeft = node.x - margin;
+                const nodeRight = node.x + nodeWidth + margin;
+
+                // 수평선이 노드의 Y 범위를 통과하고, X 범위에 겹치는지 확인
+                if (mid >= nodeTop && mid <= nodeBottom &&
+                    !(maxCoord < nodeLeft || minCoord > nodeRight)) {
+                    // 충돌 발생: 노드 위 또는 아래로 우회
+                    const distanceToTop = Math.abs(mid - nodeTop);
+                    const distanceToBottom = Math.abs(mid - nodeBottom);
+
+                    if (distanceToTop < distanceToBottom) {
+                        mid = nodeTop - margin;
+                    } else {
+                        mid = nodeBottom + margin;
+                    }
+                }
+            } else {
+                // 수직선이 노드와 충돌하는지 확인
+                const nodeTop = node.y - margin;
+                const nodeBottom = node.y + nodeHeight + margin;
+                const nodeLeft = node.x - margin;
+                const nodeRight = node.x + nodeWidth + margin;
+
+                // 수직선이 노드의 X 범위를 통과하고, Y 범위에 겹치는지 확인
+                if (mid >= nodeLeft && mid <= nodeRight &&
+                    !(maxCoord < nodeTop || minCoord > nodeBottom)) {
+                    // 충돌 발생: 노드 좌 또는 우로 우회
+                    const distanceToLeft = Math.abs(mid - nodeLeft);
+                    const distanceToRight = Math.abs(mid - nodeRight);
+
+                    if (distanceToLeft < distanceToRight) {
+                        mid = nodeLeft - margin;
+                    } else {
+                        mid = nodeRight + margin;
+                    }
+                }
+            }
+        }
+
+        return mid;
     }
 
     // Modal
