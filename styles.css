@@ -436,39 +436,41 @@ body {
 
 /* Horizontal Layout for Members */
 .org-node.layout-horizontal .node-body {
-    padding: 12px 14px;
-    background: white;
-    text-align: center;
-    display: block !important;
+    padding: 12px 14px !important;
+    background: white !important;
+    text-align: center !important;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 8px !important;
 }
 
 .org-node.layout-horizontal .member-item {
     border-bottom: none !important;
-    padding: 0 !important;
-    display: inline-block !important;
+    padding: 4px 8px !important;
+    display: flex !important;
     background: transparent !important;
-    margin: 0 8px !important;
-    gap: 0 !important;
-    align-items: baseline !important;
+    margin: 0 !important;
+    gap: 4px !important;
+    align-items: center !important;
     flex-direction: row !important;
+    white-space: nowrap !important;
 }
 
 .org-node.layout-horizontal .member-item:hover {
-    background: transparent !important;
+    background: #FAFAFA !important;
 }
 
 .org-node.layout-horizontal .member-item .member-position {
-    font-size: 13px;
-    font-weight: 600;
-    color: #787774;
-    display: inline !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #787774 !important;
 }
 
 .org-node.layout-horizontal .member-item .member-name {
-    font-size: 13px;
-    color: #37352F;
-    margin-left: 4px;
-    display: inline !important;
+    font-size: 13px !important;
+    color: #37352F !important;
 }
 
 /* Quick Copy Buttons */
