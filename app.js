@@ -1540,6 +1540,13 @@ class OrgChartApp {
     handleFormSubmit(e) {
         e.preventDefault();
 
+        // 디버깅: 모든 라디오 버튼 상태 확인
+        const allLayoutRadios = document.querySelectorAll('input[name="layoutDirection"]');
+        console.log('All layout radios:');
+        allLayoutRadios.forEach(radio => {
+            console.log(`  - value: ${radio.value}, checked: ${radio.checked}`);
+        });
+
         const layoutRadio = document.querySelector('input[name="layoutDirection"]:checked');
         const layoutDirection = layoutRadio ? layoutRadio.value : 'vertical';
 
@@ -2853,4 +2860,12 @@ class OrgChartApp {
 // Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.orgChartApp = new OrgChartApp();
+
+    // 디버깅: 라디오 버튼 클릭 이벤트 감지
+    const layoutRadios = document.querySelectorAll('input[name="layoutDirection"]');
+    layoutRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            console.log('Layout radio changed:', e.target.value, 'checked:', e.target.checked);
+        });
+    });
 });
