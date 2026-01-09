@@ -1578,16 +1578,17 @@ class OrgChartApp {
             const siblings = this.getChildren(parentId);
 
             let x, y;
-            y = parent.y + this.verticalSpacing;
 
             if (siblings.length === 0) {
                 // 첫 번째 자식: 부모 중앙 아래에 배치
+                y = parent.y + this.verticalSpacing;
                 const parentElement = document.getElementById(parentId);
                 const parentWidth = parentElement ? parentElement.offsetWidth : 150;
                 x = parent.x + (parentWidth / 2) - 75; // 75는 대략적인 노드 너비의 절반
             } else {
-                // 기존 자식들이 있으면 마지막 자식의 오른쪽에 배치
+                // 기존 자식들이 있으면 형제와 같은 Y 좌표, 마지막 자식의 오른쪽에 배치
                 const lastSibling = siblings[siblings.length - 1];
+                y = lastSibling.y; // 형제와 같은 높이
                 const lastElement = document.getElementById(lastSibling.id);
                 const lastWidth = lastElement ? lastElement.offsetWidth : 150;
                 x = lastSibling.x + lastWidth + 30; // 30px 간격
@@ -1605,17 +1606,18 @@ class OrgChartApp {
             const parentId = sibling.parentId;
 
             let x, y;
+            // 형제와 같은 Y 좌표 사용
+            y = sibling.y;
+
             if (parentId) {
                 // 부모가 있는 경우
-                const parent = this.nodes.get(parentId);
                 const siblings = this.getChildren(parentId);
-                x = parent.x + siblings.length * this.horizontalSpacing;
-                y = parent.y + this.verticalSpacing;
+                const siblingElement = document.getElementById(siblingId);
+                const siblingWidth = siblingElement ? siblingElement.offsetWidth : 150;
+                x = sibling.x + siblingWidth + 30; // 형제 오른쪽에 배치
             } else {
                 // 최상위 노드인 경우
-                const rootNodes = Array.from(this.nodes.values()).filter(n => !n.parentId);
                 x = sibling.x + (this.horizontalSpacing + 70);
-                y = sibling.y;
             }
 
             data.parentId = parentId;
@@ -1772,17 +1774,31 @@ class OrgChartApp {
                 break;
             case 'bottom':
                 // 아래쪽: 현재 노드의 자식 노드
-                newY = sourceNode.y + this.verticalSpacing;
                 parentId = nodeId; // 현재 노드를 부모로 설정
+                const existingChildren = this.getChildren(nodeId);
+                if (existingChildren.length > 0) {
+                    // 기존 자식이 있으면 같은 Y 좌표 사용
+                    newY = existingChildren[0].y;
+                    // 마지막 자식 오른쪽에 배치
+                    const lastChild = existingChildren[existingChildren.length - 1];
+                    const lastElement = document.getElementById(lastChild.id);
+                    const lastWidth = lastElement ? lastElement.offsetWidth : 150;
+                    newX = lastChild.x + lastWidth + 30;
+                } else {
+                    // 첫 번째 자식
+                    newY = sourceNode.y + this.verticalSpacing;
+                }
                 break;
             case 'left':
-                // 왼쪽: 같은 부모의 형제 노드
+                // 왼쪽: 같은 부모의 형제 노드 (Y 좌표 유지)
                 newX = sourceNode.x - this.horizontalSpacing;
+                newY = sourceNode.y; // 같은 높이 유지
                 parentId = sourceNode.parentId;
                 break;
             case 'right':
-                // 오른쪽: 같은 부모의 형제 노드
+                // 오른쪽: 같은 부모의 형제 노드 (Y 좌표 유지)
                 newX = sourceNode.x + this.horizontalSpacing;
+                newY = sourceNode.y; // 같은 높이 유지
                 parentId = sourceNode.parentId;
                 break;
         }
