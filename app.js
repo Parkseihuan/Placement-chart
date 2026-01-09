@@ -42,9 +42,9 @@ class OrgChartApp {
         this.nextGroupId = 1;
 
         // 노드 간격 설정
-        this.horizontalSpacing = 120; // 수평 간격 (형제 노드)
-        this.verticalSpacing = 100; // 수직 간격 (부모-자식)
-        this.memberGap = 8; // 직원 항목 간격 (위아래)
+        this.horizontalSpacing = 90; // 수평 간격 (형제 노드)
+        this.verticalSpacing = 75; // 수직 간격 (부모-자식)
+        this.memberGap = 6; // 직원 항목 간격 (위아래)
 
         // 버전 관리
         this.versions = []; // 저장된 버전 목록

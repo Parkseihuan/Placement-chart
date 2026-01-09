@@ -324,9 +324,9 @@ body {
     background: white;
     border: 1.5px solid #E3E2E0;
     border-radius: 3px;
-    min-width: 150px;
-    max-width: 300px;
-    min-height: 45px;
+    min-width: 110px;
+    max-width: 220px;
+    min-height: 40px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
     cursor: move;
     user-select: none;
@@ -382,9 +382,9 @@ body {
 .node-header {
     background: #37352F;
     color: white;
-    padding: 10px 15px;
+    padding: 8px 12px;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 12px;
     border-radius: 2px 2px 0 0;
     text-align: center;
     flex-shrink: 0;
@@ -404,12 +404,12 @@ body {
 
 /* Member Items */
 .member-item {
-    padding: 8px 12px;
+    padding: 6px 10px;
     border-bottom: 1px solid #F7F6F3;
     display: flex;
-    gap: 4px;
+    gap: 3px;
     align-items: center;
-    font-size: 13px;
+    font-size: 11px;
     transition: background 0.15s ease;
 }
 
