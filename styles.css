@@ -434,29 +434,42 @@ body {
     color: #37352F;
 }
 
-/* Horizontal Layout for Members */
-.org-node.layout-horizontal .node-body {
-    padding: 12px 14px !important;
-    background: #FFD700 !important; /* 테스트: 노란색 배경 */
-    text-align: center !important;
+/* Horizontal Layout for Members - 부서명과 직원을 가로로 배치 */
+.org-node.layout-horizontal {
     display: flex !important;
     flex-direction: row !important;
-    flex-wrap: wrap !important;
+    align-items: stretch !important;
+}
+
+.org-node.layout-horizontal .node-header {
+    flex: 0 0 auto !important;
+    border-right: 1px solid #E3E2E0 !important;
+    border-bottom: none !important;
+    display: flex !important;
+    align-items: center !important;
     justify-content: center !important;
-    gap: 8px !important;
-    border: 3px solid red !important; /* 테스트: 빨간 테두리 */
+    min-width: 80px !important;
+}
+
+.org-node.layout-horizontal .node-body {
+    flex: 1 !important;
+    padding: 12px 14px !important;
+    background: white !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
 }
 
 .org-node.layout-horizontal .member-item {
-    border-bottom: none !important;
-    padding: 4px 8px !important;
+    border-bottom: 1px solid #F7F6F3 !important;
+    padding: 8px 12px !important;
     display: flex !important;
-    background: transparent !important;
-    margin: 0 !important;
     gap: 4px !important;
     align-items: center !important;
-    flex-direction: row !important;
-    white-space: nowrap !important;
+}
+
+.org-node.layout-horizontal .member-item:last-child {
+    border-bottom: none !important;
 }
 
 .org-node.layout-horizontal .member-item:hover {

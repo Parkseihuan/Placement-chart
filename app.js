@@ -173,10 +173,6 @@ class OrgChartApp {
     // Node Management
     createNode(data) {
         const id = `node-${this.nextId++}`;
-
-        // 디버깅: createNode에 전달된 data 확인
-        console.log('createNode - received data:', data);
-
         const node = {
             id,
             deptName: data.deptName || '새 부서',
@@ -190,8 +186,6 @@ class OrgChartApp {
             x: data.x || 100,
             y: data.y || 100
         };
-
-        console.log('createNode - created node:', node);
 
         this.nodes.set(id, node);
         this.renderNode(node);
@@ -221,13 +215,8 @@ class OrgChartApp {
         if (node.isIndependent) {
             element.classList.add('independent-node');
         }
-
-        // 디버깅: layoutDirection 확인
-        console.log('renderNode - layoutDirection:', node.layoutDirection, 'nodeId:', node.id);
-
         if (node.layoutDirection === 'horizontal') {
             element.classList.add('layout-horizontal');
-            console.log('Added layout-horizontal class to', node.id);
         }
         if (node.locked) {
             element.classList.add('locked');
@@ -1540,19 +1529,8 @@ class OrgChartApp {
     handleFormSubmit(e) {
         e.preventDefault();
 
-        // 디버깅: 모든 라디오 버튼 상태 확인
-        const allLayoutRadios = document.querySelectorAll('input[name="layoutDirection"]');
-        console.log('All layout radios:');
-        allLayoutRadios.forEach(radio => {
-            console.log(`  - value: ${radio.value}, checked: ${radio.checked}`);
-        });
-
         const layoutRadio = document.querySelector('input[name="layoutDirection"]:checked');
         const layoutDirection = layoutRadio ? layoutRadio.value : 'vertical';
-
-        // 디버깅: 폼에서 선택된 layoutDirection 확인
-        console.log('handleFormSubmit - layoutRadio:', layoutRadio);
-        console.log('handleFormSubmit - layoutDirection:', layoutDirection);
 
         const data = {
             deptName: document.getElementById('deptName').value.trim(),
@@ -1562,8 +1540,6 @@ class OrgChartApp {
             connectionStart: document.getElementById('connectionStart').value,
             connectionEnd: document.getElementById('connectionEnd').value
         };
-
-        console.log('handleFormSubmit - data:', data);
 
         const mode = this.nodeForm.dataset.mode;
 
@@ -2860,12 +2836,4 @@ class OrgChartApp {
 // Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.orgChartApp = new OrgChartApp();
-
-    // 디버깅: 라디오 버튼 클릭 이벤트 감지
-    const layoutRadios = document.querySelectorAll('input[name="layoutDirection"]');
-    layoutRadios.forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            console.log('Layout radio changed:', e.target.value, 'checked:', e.target.checked);
-        });
-    });
 });
