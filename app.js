@@ -1754,7 +1754,6 @@ class OrgChartApp {
         if (!sourceNode) return;
 
         // 복사할 노드 데이터 생성
-        const offset = 200; // 기본 간격
         let newX = sourceNode.x;
         let newY = sourceNode.y;
         let parentId;
@@ -1763,7 +1762,7 @@ class OrgChartApp {
         switch (direction) {
             case 'top':
                 // 위쪽: 부모의 형제 노드 (상위 레벨) - 조부모의 자식
-                newY = sourceNode.y - offset;
+                newY = sourceNode.y - this.verticalSpacing;
                 if (sourceNode.parentId) {
                     const parentNode = this.nodes.get(sourceNode.parentId);
                     parentId = parentNode ? parentNode.parentId : null;
@@ -1773,17 +1772,17 @@ class OrgChartApp {
                 break;
             case 'bottom':
                 // 아래쪽: 현재 노드의 자식 노드
-                newY = sourceNode.y + offset;
+                newY = sourceNode.y + this.verticalSpacing;
                 parentId = nodeId; // 현재 노드를 부모로 설정
                 break;
             case 'left':
                 // 왼쪽: 같은 부모의 형제 노드
-                newX = sourceNode.x - offset;
+                newX = sourceNode.x - this.horizontalSpacing;
                 parentId = sourceNode.parentId;
                 break;
             case 'right':
                 // 오른쪽: 같은 부모의 형제 노드
-                newX = sourceNode.x + offset;
+                newX = sourceNode.x + this.horizontalSpacing;
                 parentId = sourceNode.parentId;
                 break;
         }
