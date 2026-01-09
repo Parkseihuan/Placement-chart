@@ -1545,7 +1545,7 @@ class OrgChartApp {
 
         if (mode === 'add') {
             const parentId = this.nodeForm.dataset.parentId || null;
-            let x = 100, y = 120;
+            let x, y;
 
             if (parentId) {
                 const parent = this.nodes.get(parentId);
@@ -1553,10 +1553,17 @@ class OrgChartApp {
                 x = parent.x + siblings.length * this.horizontalSpacing;
                 y = parent.y + this.verticalSpacing;
             } else {
-                // Find a good position for root node
+                // 최상위 노드를 캔버스 중앙 상단에 배치
+                const orgChartEl = document.getElementById('orgChart');
+                const canvasWidth = orgChartEl ? orgChartEl.offsetWidth : 1587; // A3 가로 기본값
                 const rootNodes = Array.from(this.nodes.values()).filter(n => !n.parentId);
-                x = 100 + rootNodes.length * (this.horizontalSpacing + 20);
-                y = 120;
+
+                // 중앙에서 시작하여 각 루트 노드를 가로로 배치
+                const totalWidth = rootNodes.length * (this.horizontalSpacing + 200);
+                const startX = (canvasWidth - totalWidth) / 2 + rootNodes.length * (this.horizontalSpacing + 100);
+
+                x = startX;
+                y = 150; // 상단에서 약간 아래
             }
 
             data.parentId = parentId;
