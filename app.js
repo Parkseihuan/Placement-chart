@@ -2643,7 +2643,8 @@ class OrgChartApp {
             }
         });
 
-        this.updateConnections();
+        // Auto layout for clean arrangement
+        this.autoLayout();
 
         // Reset zoom level
         this.zoomReset();
@@ -2658,15 +2659,15 @@ class OrgChartApp {
         return {
             nodes: [
                 // 0: 총장
-                { deptName: '총장', members: [{ position: '총장', name: '김용인' }], x: 900, y: 80, parentIndex: null },
+                { deptName: '총장', members: [{ position: '총장', name: '김용인' }], x: 0, y: 0, parentIndex: null },
 
                 // 1: 감사실 (독립 노드)
-                { deptName: '감사실', members: [{ position: '실장', name: '홍감사' }], x: 1200, y: 80, parentIndex: null, isIndependent: true },
+                { deptName: '감사실', members: [{ position: '실장', name: '홍감사' }], x: 0, y: 0, parentIndex: null, isIndependent: true },
 
-                // 2-3: 부총장
-                { deptName: '교무처', members: [], x: 600, y: 200, parentIndex: 0 },
-                { deptName: '학생처', members: [], x: 900, y: 200, parentIndex: 0 },
-                { deptName: '기획처', members: [], x: 1200, y: 200, parentIndex: 0 },
+                // 2-4: 처
+                { deptName: '교무처', members: [], x: 0, y: 0, parentIndex: 0 },
+                { deptName: '학생처', members: [], x: 0, y: 0, parentIndex: 0 },
+                { deptName: '기획처', members: [], x: 0, y: 0, parentIndex: 0 },
 
                 // 5-7: 교무처 하위 부서 (가로 레이아웃 포함)
                 {
@@ -2676,27 +2677,27 @@ class OrgChartApp {
                         { position: '과장', name: '이교육' },
                         { position: '주임', name: '정개발' }
                     ],
-                    x: 400, y: 330, parentIndex: 2,
+                    x: 0, y: 0, parentIndex: 2,
                     layoutDirection: 'horizontal'
                 },
-                { deptName: '교수학습지원센터', members: [{ position: '센터장', name: '김교수' }], x: 650, y: 330, parentIndex: 2 },
+                { deptName: '교수학습지원센터', members: [{ position: '센터장', name: '김교수' }], x: 0, y: 0, parentIndex: 2 },
                 {
                     deptName: '교무팀',
                     members: [
                         { position: '팀장', name: '최교무' },
                         { position: '과장', name: '안행정' }
                     ],
-                    x: 850, y: 330, parentIndex: 2,
+                    x: 0, y: 0, parentIndex: 2,
                     layoutDirection: 'horizontal'
                 },
 
                 // 8-10: 학생처 하위 부서
-                { deptName: '학생지원팀', members: [{ position: '팀장', name: '윤학생' }, { position: '주임', name: '서지원' }], x: 900, y: 330, parentIndex: 3 },
-                { deptName: '상담센터', members: [{ position: '센터장', name: '문상담' }], x: 1050, y: 330, parentIndex: 3 },
-                { deptName: '취창업지원센터', members: [{ position: '센터장', name: '강취업' }], x: 1200, y: 330, parentIndex: 3 },
+                { deptName: '학생지원팀', members: [{ position: '팀장', name: '윤학생' }, { position: '주임', name: '서지원' }], x: 0, y: 0, parentIndex: 3 },
+                { deptName: '상담센터', members: [{ position: '센터장', name: '문상담' }], x: 0, y: 0, parentIndex: 3 },
+                { deptName: '취창업지원센터', members: [{ position: '센터장', name: '강취업' }], x: 0, y: 0, parentIndex: 3 },
 
-                // 11-14: 기획처 하위 부서
-                { deptName: '기획예산팀', members: [{ position: '팀장', name: '장기획' }], x: 1050, y: 330, parentIndex: 4 },
+                // 11-13: 기획처 하위 부서
+                { deptName: '기획예산팀', members: [{ position: '팀장', name: '장기획' }], x: 0, y: 0, parentIndex: 4 },
                 {
                     deptName: '대외협력팀',
                     members: [
@@ -2704,25 +2705,25 @@ class OrgChartApp {
                         { position: '과장', name: '신국제' },
                         { position: '주임', name: '조교류' }
                     ],
-                    x: 1250, y: 330, parentIndex: 4,
+                    x: 0, y: 0, parentIndex: 4,
                     layoutDirection: 'horizontal'
                 },
-                { deptName: '홍보팀', members: [{ position: '팀장', name: '한홍보' }], x: 1450, y: 330, parentIndex: 4 },
+                { deptName: '홍보팀', members: [{ position: '팀장', name: '한홍보' }], x: 0, y: 0, parentIndex: 4 },
 
                 // 14: 노동조합 (독립 노드)
-                { deptName: '노동조합', members: [{ position: '위원장', name: '권노동' }], x: 150, y: 80, parentIndex: null, isIndependent: true },
+                { deptName: '노동조합', members: [{ position: '위원장', name: '권노동' }], x: 0, y: 0, parentIndex: null, isIndependent: true },
 
-                // 15-17: 행정부서 (교무처 추가 하위)
-                { deptName: '학사운영팀', members: [{ position: '과장', name: '임학사' }, { position: '주임', name: '배운영' }], x: 500, y: 480, parentIndex: 6 },
+                // 15: 교무처 추가 하위 부서
+                { deptName: '학사운영팀', members: [{ position: '과장', name: '임학사' }, { position: '주임', name: '배운영' }], x: 0, y: 0, parentIndex: 5 },
 
-                // 18: 학생복지팀 (학생처 추가 하위)
+                // 16: 학생처 추가 하위 부서
                 {
                     deptName: '학생복지팀',
                     members: [
                         { position: '팀장', name: '유복지' },
                         { position: '과장', name: '양학생' }
                     ],
-                    x: 750, y: 480, parentIndex: 8,
+                    x: 0, y: 0, parentIndex: 8,
                     layoutDirection: 'horizontal'
                 }
             ]
