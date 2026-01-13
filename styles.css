@@ -395,6 +395,11 @@ body {
     border-radius: 2px;
 }
 
+/* 직원이 없는 노드의 바디는 숨김 */
+.org-node.no-members .node-body {
+    display: none;
+}
+
 .node-body {
     padding: 6px;
     background: white;
@@ -442,32 +447,38 @@ body {
     display: flex !important;
     flex-direction: row !important;
     align-items: stretch !important;
+    max-width: 250px !important;
 }
 
 .org-node.layout-horizontal .node-header {
     flex: 0 0 auto !important;
     border-right: 1px solid #E3E2E0 !important;
     border-bottom: none !important;
+    border-radius: 2px 0 0 2px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    min-width: 80px !important;
+    min-width: 60px !important;
+    max-width: 80px !important;
+    padding: 8px 6px !important;
+    writing-mode: horizontal-tb !important;
 }
 
 .org-node.layout-horizontal .node-body {
-    flex: 1 !important;
-    padding: 12px 14px !important;
+    flex: 0 1 auto !important;
+    padding: 8px 10px !important;
     background: white !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: center !important;
+    min-width: 0 !important;
 }
 
 .org-node.layout-horizontal .member-item {
     border-bottom: 1px solid #F7F6F3 !important;
-    padding: 8px 12px !important;
+    padding: 4px 6px !important;
     display: flex !important;
-    gap: 4px !important;
+    gap: 3px !important;
     align-items: center !important;
 }
 
@@ -480,13 +491,14 @@ body {
 }
 
 .org-node.layout-horizontal .member-item .member-position {
-    font-size: 13px !important;
+    font-size: 10px !important;
     font-weight: 600 !important;
     color: #787774 !important;
+    min-width: 40px !important;
 }
 
 .org-node.layout-horizontal .member-item .member-name {
-    font-size: 13px !important;
+    font-size: 10px !important;
     color: #37352F !important;
 }
 

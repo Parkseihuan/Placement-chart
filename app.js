@@ -1976,25 +1976,38 @@ class OrgChartApp {
         const rootNodes = Array.from(this.nodes.values()).filter(n => !n.parentId);
         if (rootNodes.length === 0) return;
 
+        // 실제 노드 너비를 가져오는 헬퍼 함수
+        const getNodeWidth = (nodeId) => {
+            const element = document.getElementById(nodeId);
+            if (element) {
+                return element.offsetWidth || 85; // 최소 85px
+            }
+            return 85;
+        };
+
         // Calculate tree structure
         const layoutTree = (node, level, offset) => {
             const children = this.getChildren(node.id);
+            const nodeWidth = getNodeWidth(node.id);
             let totalWidth = 0;
 
             if (children.length === 0) {
-                totalWidth = this.horizontalSpacing;
+                // 자식이 없으면 노드 너비 + 간격
+                totalWidth = nodeWidth + this.horizontalSpacing;
             } else {
+                // 자식들의 총 너비 계산
                 children.forEach(child => {
                     totalWidth += layoutTree(child, level + 1, offset + totalWidth);
                 });
+                // 최소한 현재 노드 너비는 확보
+                totalWidth = Math.max(totalWidth, nodeWidth + this.horizontalSpacing);
             }
 
             // 위치가 고정된 노드는 이동하지 않음
             if (!node.locked) {
                 // Center this node above its children
-                const nodeWidth = Math.max(totalWidth, this.horizontalSpacing);
-                const newX = offset + nodeWidth / 2 - 43; // 노드 중심 조정 (85px / 2)
-                const newY = 100 + level * this.verticalSpacing;
+                const newX = offset + (totalWidth - nodeWidth) / 2;
+                const newY = 80 + level * this.verticalSpacing;
 
                 // 이동량 계산 (그룹 업데이트용)
                 const deltaX = newX - node.x;
@@ -2015,35 +2028,40 @@ class OrgChartApp {
                 }
             }
 
-            return Math.max(totalWidth, this.horizontalSpacing);
+            return totalWidth;
         };
 
         // 먼저 전체 너비 계산
         const calculateTreeWidth = (node) => {
             const children = this.getChildren(node.id);
+            const nodeWidth = getNodeWidth(node.id);
+
             if (children.length === 0) {
-                return this.horizontalSpacing;
+                return nodeWidth + this.horizontalSpacing;
             }
+
             let totalWidth = 0;
             children.forEach(child => {
                 totalWidth += calculateTreeWidth(child);
             });
-            return totalWidth;
+
+            return Math.max(totalWidth, nodeWidth + this.horizontalSpacing);
         };
 
         let totalTreeWidth = 0;
         rootNodes.forEach(root => {
-            totalTreeWidth += calculateTreeWidth(root) + 30; // 루트 간 간격
+            totalTreeWidth += calculateTreeWidth(root) + 50; // 루트 간 간격
         });
 
         // 캔버스 중앙에 배치
         const canvasWidth = 1800; // A3 캔버스 너비
-        const startOffset = Math.max(50, (canvasWidth - totalTreeWidth) / 2);
+        const canvasPadding = 40; // 양쪽 여백
+        const startOffset = Math.max(canvasPadding, (canvasWidth - totalTreeWidth) / 2);
 
         let currentOffset = startOffset;
         rootNodes.forEach(root => {
             const width = layoutTree(root, 0, currentOffset);
-            currentOffset += width + 30;
+            currentOffset += width + 50;
         });
 
         this.updateConnections();
