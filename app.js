@@ -1993,8 +1993,8 @@ class OrgChartApp {
             if (!node.locked) {
                 // Center this node above its children
                 const nodeWidth = Math.max(totalWidth, this.horizontalSpacing);
-                const newX = offset + nodeWidth / 2 - 75;
-                const newY = 120 + level * this.verticalSpacing;
+                const newX = offset + nodeWidth / 2 - 43; // 노드 중심 조정 (85px / 2)
+                const newY = 100 + level * this.verticalSpacing;
 
                 // 이동량 계산 (그룹 업데이트용)
                 const deltaX = newX - node.x;
@@ -2018,10 +2018,32 @@ class OrgChartApp {
             return Math.max(totalWidth, this.horizontalSpacing);
         };
 
-        let totalOffset = 100;
+        // 먼저 전체 너비 계산
+        const calculateTreeWidth = (node) => {
+            const children = this.getChildren(node.id);
+            if (children.length === 0) {
+                return this.horizontalSpacing;
+            }
+            let totalWidth = 0;
+            children.forEach(child => {
+                totalWidth += calculateTreeWidth(child);
+            });
+            return totalWidth;
+        };
+
+        let totalTreeWidth = 0;
         rootNodes.forEach(root => {
-            const width = layoutTree(root, 0, totalOffset);
-            totalOffset += width + 50;
+            totalTreeWidth += calculateTreeWidth(root) + 30; // 루트 간 간격
+        });
+
+        // 캔버스 중앙에 배치
+        const canvasWidth = 1800; // A3 캔버스 너비
+        const startOffset = Math.max(50, (canvasWidth - totalTreeWidth) / 2);
+
+        let currentOffset = startOffset;
+        rootNodes.forEach(root => {
+            const width = layoutTree(root, 0, currentOffset);
+            currentOffset += width + 30;
         });
 
         this.updateConnections();
