@@ -1973,7 +1973,8 @@ class OrgChartApp {
 
     // Auto Layout
     autoLayout() {
-        const rootNodes = Array.from(this.nodes.values()).filter(n => !n.parentId);
+        // 독립 노드는 자동 배치에서 제외
+        const rootNodes = Array.from(this.nodes.values()).filter(n => !n.parentId && !n.isIndependent);
         if (rootNodes.length === 0) return;
 
         // 실제 노드 너비를 가져오는 헬퍼 함수
@@ -2661,8 +2662,8 @@ class OrgChartApp {
                 // 0: 총장
                 { deptName: '총장', members: [{ position: '총장', name: '김용인' }], x: 0, y: 0, parentIndex: null },
 
-                // 1: 감사실 (독립 노드)
-                { deptName: '감사실', members: [{ position: '실장', name: '홍감사' }], x: 0, y: 0, parentIndex: null, isIndependent: true },
+                // 1: 감사실 (독립 노드 - 오른쪽 상단 고정)
+                { deptName: '감사실', members: [{ position: '실장', name: '홍감사' }], x: 1600, y: 80, parentIndex: null, isIndependent: true },
 
                 // 2-4: 처
                 { deptName: '교무처', members: [], x: 0, y: 0, parentIndex: 0 },
@@ -2710,8 +2711,8 @@ class OrgChartApp {
                 },
                 { deptName: '홍보팀', members: [{ position: '팀장', name: '한홍보' }], x: 0, y: 0, parentIndex: 4 },
 
-                // 14: 노동조합 (독립 노드)
-                { deptName: '노동조합', members: [{ position: '위원장', name: '권노동' }], x: 0, y: 0, parentIndex: null, isIndependent: true },
+                // 14: 노동조합 (독립 노드 - 왼쪽 상단 고정)
+                { deptName: '노동조합', members: [{ position: '위원장', name: '권노동' }], x: 100, y: 80, parentIndex: null, isIndependent: true },
 
                 // 15: 교무처 추가 하위 부서
                 { deptName: '학사운영팀', members: [{ position: '과장', name: '임학사' }, { position: '주임', name: '배운영' }], x: 0, y: 0, parentIndex: 5 },
