@@ -390,6 +390,12 @@ body {
     flex-shrink: 0;
 }
 
+/* 직원이 없는 노드 */
+.org-node.no-members {
+    min-height: auto !important;
+    height: auto !important;
+}
+
 /* 직원이 없는 노드의 헤더는 모든 모서리 둥글게 */
 .org-node.no-members .node-header {
     border-radius: 2px;
@@ -397,7 +403,7 @@ body {
 
 /* 직원이 없는 노드의 바디는 숨김 */
 .org-node.no-members .node-body {
-    display: none;
+    display: none !important;
 }
 
 .node-body {
