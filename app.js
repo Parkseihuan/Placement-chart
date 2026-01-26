@@ -1981,9 +1981,15 @@ class OrgChartApp {
         const getNodeWidth = (nodeId) => {
             const element = document.getElementById(nodeId);
             if (element) {
-                return element.offsetWidth || 85;
+                const width = element.offsetWidth;
+                // 가로 레이아웃 노드는 더 넓을 수 있음
+                if (width > 0) {
+                    console.log(`Node ${nodeId} width: ${width}px`);
+                    return width;
+                }
             }
-            return 85;
+            console.warn(`Node ${nodeId} width fallback to 120px`);
+            return 120; // 기본값을 85에서 120으로 증가
         };
 
         // Step 1: Calculate subtree widths (bottom-up, Reingold-Tilford algorithm)
@@ -2062,7 +2068,11 @@ class OrgChartApp {
         };
 
         // Calculate widths for all root trees
-        rootNodes.forEach(root => calculateSubtreeWidth(root));
+        console.log(`Processing ${rootNodes.length} root nodes (excluding independent nodes)`);
+        rootNodes.forEach(root => {
+            calculateSubtreeWidth(root);
+            console.log(`Root node ${root.deptName}: subtree width = ${root._subtreeWidth}px`);
+        });
 
         // Calculate total width needed for all trees
         let totalWidth = 0;
@@ -2073,9 +2083,12 @@ class OrgChartApp {
             }
         });
 
+        console.log(`Total width: ${totalWidth}px, Canvas width: 1800px`);
+
         // Center on canvas
         const canvasWidth = 1800;
         const startX = Math.max(30, (canvasWidth - totalWidth) / 2);
+        console.log(`Starting X position: ${startX}px`);
 
         // Position all trees
         let currentX = startX;
@@ -2087,6 +2100,8 @@ class OrgChartApp {
         this.updateConnections();
         this.saveState();
         this.saveToLocalStorage();
+
+        console.log('AutoLayout algorithm completed successfully');
     }
 
     updateGroupPositions(groupId, movedNodeId, deltaX, deltaY) {
@@ -2645,17 +2660,17 @@ class OrgChartApp {
         });
 
         // DOM 렌더링 완료 후 자동 배치 실행
-        // requestAnimationFrame을 두 번 사용하여 브라우저가 레이아웃 계산을 완료하도록 함
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                this.autoLayout();
-                this.zoomReset();
-                this.saveState();
-                this.saveToLocalStorage();
-            });
-        });
+        // setTimeout을 사용하여 브라우저가 레이아웃 계산을 완료하도록 충분한 시간 제공
+        setTimeout(() => {
+            console.log('Starting autoLayout...');
+            this.autoLayout();
+            this.zoomReset();
+            this.saveState();
+            this.saveToLocalStorage();
+            console.log('AutoLayout completed');
+        }, 150); // 150ms 지연
 
-        alert('샘플 데이터로 초기화되었습니다.');
+        alert('샘플 데이터로 초기화되었습니다.\n\n잠시 후 자동 배치가 실행됩니다.');
     }
 
     getSampleData() {
