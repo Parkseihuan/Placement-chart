@@ -99,11 +99,12 @@ class OrgChartApp {
         document.getElementById('spacingSettingsBtn').addEventListener('click', () => this.showSpacingModal());
         document.getElementById('versionBtn').addEventListener('click', () => this.showVersionModal());
         document.getElementById('exportBtn').addEventListener('click', () => this.exportAsImage());
-        document.getElementById('saveDataBtn').addEventListener('click', () => this.saveToFile());
-        document.getElementById('loadDataBtn').addEventListener('click', () => this.fileInput.click());
+        document.getElementById('exportCSVBtn').addEventListener('click', () => this.exportToCSV());
+        document.getElementById('exportExcelBtn').addEventListener('click', () => this.exportToExcel());
+        document.getElementById('importDataBtn').addEventListener('click', () => this.fileInput.click());
 
         // File input
-        this.fileInput.addEventListener('change', (e) => this.loadFromFile(e));
+        this.fileInput.addEventListener('change', (e) => this.importFromFile(e));
 
         // Modal events
         this.nodeForm.addEventListener('submit', (e) => this.handleFormSubmit(e));
@@ -2429,6 +2430,254 @@ class OrgChartApp {
 
         // Reset file input
         e.target.value = '';
+    }
+
+    // CSV/Excel Export/Import Functions
+    exportToCSV() {
+        const rows = [['부서명', '상위부서', '독립노드', '가로레이아웃', '직위1', '이름1', '직위2', '이름2', '직위3', '이름3', '직위4', '이름4', '직위5', '이름5']];
+
+        Array.from(this.nodes.values()).forEach(node => {
+            const parentNode = node.parentId ? this.nodes.get(node.parentId) : null;
+            const row = [
+                node.deptName,
+                parentNode ? parentNode.deptName : '',
+                node.isIndependent ? 'Y' : 'N',
+                node.layoutDirection === 'horizontal' ? 'Y' : 'N'
+            ];
+
+            // 최대 5명까지 직원 정보 추가
+            for (let i = 0; i < 5; i++) {
+                if (i < node.members.length) {
+                    row.push(node.members[i].position || '');
+                    row.push(node.members[i].name || '');
+                } else {
+                    row.push('', '');
+                }
+            }
+
+            rows.push(row);
+        });
+
+        const csvContent = rows.map(row =>
+            row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+        ).join('\n');
+
+        const bom = '\uFEFF'; // UTF-8 BOM for Excel
+        const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `조직도_${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+
+        URL.revokeObjectURL(url);
+        alert('CSV 파일로 저장되었습니다.');
+    }
+
+    exportToExcel() {
+        if (typeof XLSX === 'undefined') {
+            alert('Excel 라이브러리를 불러오는 중 오류가 발생했습니다.');
+            return;
+        }
+
+        const data = [['부서명', '상위부서', '독립노드', '가로레이아웃', '직위1', '이름1', '직위2', '이름2', '직위3', '이름3', '직위4', '이름4', '직위5', '이름5']];
+
+        Array.from(this.nodes.values()).forEach(node => {
+            const parentNode = node.parentId ? this.nodes.get(node.parentId) : null;
+            const row = [
+                node.deptName,
+                parentNode ? parentNode.deptName : '',
+                node.isIndependent ? 'Y' : 'N',
+                node.layoutDirection === 'horizontal' ? 'Y' : 'N'
+            ];
+
+            for (let i = 0; i < 5; i++) {
+                if (i < node.members.length) {
+                    row.push(node.members[i].position || '');
+                    row.push(node.members[i].name || '');
+                } else {
+                    row.push('', '');
+                }
+            }
+
+            data.push(row);
+        });
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(data);
+
+        // 열 너비 설정
+        ws['!cols'] = [
+            { wch: 20 }, // 부서명
+            { wch: 20 }, // 상위부서
+            { wch: 10 }, // 독립노드
+            { wch: 12 }, // 가로레이아웃
+            { wch: 12 }, { wch: 12 }, // 직위1, 이름1
+            { wch: 12 }, { wch: 12 }, // 직위2, 이름2
+            { wch: 12 }, { wch: 12 }, // 직위3, 이름3
+            { wch: 12 }, { wch: 12 }, // 직위4, 이름4
+            { wch: 12 }, { wch: 12 }  // 직위5, 이름5
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, '조직도');
+        XLSX.writeFile(wb, `조직도_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+        alert('Excel 파일로 저장되었습니다.');
+    }
+
+    importFromFile(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const fileName = file.name.toLowerCase();
+
+        if (fileName.endsWith('.csv')) {
+            this.importFromCSV(file);
+        } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+            this.importFromExcel(file);
+        } else {
+            alert('CSV 또는 Excel 파일만 지원합니다.');
+        }
+
+        e.target.value = '';
+    }
+
+    importFromCSV(file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const text = event.target.result;
+                const rows = text.split('\n').map(row => {
+                    const cells = [];
+                    let cell = '';
+                    let inQuotes = false;
+
+                    for (let i = 0; i < row.length; i++) {
+                        const char = row[i];
+                        if (char === '"') {
+                            if (inQuotes && row[i + 1] === '"') {
+                                cell += '"';
+                                i++;
+                            } else {
+                                inQuotes = !inQuotes;
+                            }
+                        } else if (char === ',' && !inQuotes) {
+                            cells.push(cell);
+                            cell = '';
+                        } else {
+                            cell += char;
+                        }
+                    }
+                    cells.push(cell);
+                    return cells;
+                });
+
+                this.processImportedData(rows);
+            } catch (err) {
+                alert('CSV 파일을 불러오는데 실패했습니다.');
+                console.error(err);
+            }
+        };
+        reader.readAsText(file, 'UTF-8');
+    }
+
+    importFromExcel(file) {
+        if (typeof XLSX === 'undefined') {
+            alert('Excel 라이브러리를 불러오는 중 오류가 발생했습니다.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+                this.processImportedData(rows);
+            } catch (err) {
+                alert('Excel 파일을 불러오는데 실패했습니다.');
+                console.error(err);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    processImportedData(rows) {
+        if (rows.length < 2) {
+            alert('데이터가 없습니다.');
+            return;
+        }
+
+        // Clear existing
+        this.clearChart();
+        this.ensureSVG();
+        this.nextId = 1;
+
+        // Skip header row
+        const dataRows = rows.slice(1).filter(row => row[0]); // 부서명이 있는 행만
+
+        // First pass: create all nodes
+        const nodeMap = new Map(); // 부서명 -> node
+
+        dataRows.forEach(row => {
+            const deptName = String(row[0] || '').trim();
+            if (!deptName) return;
+
+            const members = [];
+            for (let i = 0; i < 5; i++) {
+                const position = String(row[4 + i * 2] || '').trim();
+                const name = String(row[5 + i * 2] || '').trim();
+                if (position || name) {
+                    members.push({ position, name });
+                }
+            }
+
+            const node = {
+                id: `node-${this.nextId++}`,
+                deptName: deptName,
+                members: members,
+                parentId: null,
+                isIndependent: String(row[2] || '').toUpperCase() === 'Y',
+                layoutDirection: String(row[3] || '').toUpperCase() === 'Y' ? 'horizontal' : 'vertical',
+                locked: false,
+                connectionStart: 'bottom',
+                connectionEnd: 'top',
+                x: 0,
+                y: 0
+            };
+
+            this.nodes.set(node.id, node);
+            nodeMap.set(deptName, node);
+            this.renderNode(node);
+        });
+
+        // Second pass: set parent relationships
+        dataRows.forEach(row => {
+            const deptName = String(row[0] || '').trim();
+            const parentDeptName = String(row[1] || '').trim();
+
+            if (deptName && parentDeptName) {
+                const node = nodeMap.get(deptName);
+                const parentNode = nodeMap.get(parentDeptName);
+
+                if (node && parentNode) {
+                    node.parentId = parentNode.id;
+                }
+            }
+        });
+
+        // Auto layout after import
+        setTimeout(() => {
+            console.log('Starting auto layout after CSV/Excel import...');
+            this.autoLayout();
+            this.zoomReset();
+            this.saveState();
+            this.saveToLocalStorage();
+            alert('파일을 성공적으로 불러왔습니다.\n\n노드가 자동으로 배치되었습니다.');
+        }, 150);
     }
 
     async exportAsImage() {

@@ -26,8 +26,9 @@
                 <button id="spacingSettingsBtn" class="btn btn-secondary" data-tooltip="노드 간 간격을 조정합니다">간격 설정</button>
                 <button id="versionBtn" class="btn btn-secondary" data-tooltip="저장된 버전을 관리하고 복원합니다">버전 관리</button>
                 <button id="exportBtn" class="btn btn-secondary" data-tooltip="조직도를 PNG 이미지로 저장합니다">이미지 저장</button>
-                <button id="saveDataBtn" class="btn btn-secondary" data-tooltip="현재 조직도를 JSON 파일로 저장합니다">데이터 저장</button>
-                <button id="loadDataBtn" class="btn btn-secondary" data-tooltip="JSON 파일에서 조직도를 불러옵니다">데이터 불러오기</button>
+                <button id="exportCSVBtn" class="btn btn-secondary" data-tooltip="조직도를 CSV 파일로 저장합니다">📊 CSV 저장</button>
+                <button id="exportExcelBtn" class="btn btn-secondary" data-tooltip="조직도를 Excel 파일로 저장합니다">📗 Excel 저장</button>
+                <button id="importDataBtn" class="btn btn-secondary" data-tooltip="CSV 또는 Excel 파일에서 조직도를 불러옵니다">📂 파일 불러오기</button>
                 <a href="view.html" class="btn btn-primary" data-tooltip="사용자 보기 모드로 전환합니다" style="text-decoration: none; display: inline-flex; align-items: center;">👁️ 보기 모드</a>
             </div>
         </header>
@@ -219,9 +220,10 @@
         </div>
     </div>
 
-    <input type="file" id="fileInput" accept=".json" style="display: none;">
+    <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display: none;">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="app.js?v=1769436346"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="app.js?v=1769436995"></script>
 </body>
 </html>
