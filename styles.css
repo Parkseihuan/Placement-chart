@@ -447,7 +447,7 @@ body {
     display: flex !important;
     flex-direction: row !important;
     align-items: stretch !important;
-    max-width: 250px !important;
+    max-width: 180px !important;
 }
 
 .org-node.layout-horizontal .node-header {
@@ -458,15 +458,15 @@ body {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    min-width: 60px !important;
-    max-width: 80px !important;
-    padding: 8px 6px !important;
+    min-width: 50px !important;
+    max-width: 60px !important;
+    padding: 6px 4px !important;
     writing-mode: horizontal-tb !important;
 }
 
 .org-node.layout-horizontal .node-body {
     flex: 0 1 auto !important;
-    padding: 8px 10px !important;
+    padding: 6px 8px !important;
     background: white !important;
     display: flex !important;
     flex-direction: column !important;
