@@ -42,8 +42,8 @@ class OrgChartApp {
         this.nextGroupId = 1;
 
         // 노드 간격 설정
-        this.horizontalSpacing = 85; // 수평 간격 (형제 노드)
-        this.verticalSpacing = 75; // 수직 간격 (부모-자식)
+        this.horizontalSpacing = 50; // 수평 간격 (형제 노드)
+        this.verticalSpacing = 80; // 수직 간격 (부모-자식)
         this.memberGap = 4; // 직원 항목 간격 (위아래)
 
         // 버전 관리
@@ -2682,68 +2682,42 @@ class OrgChartApp {
                 // 1: 감사실 (독립 노드 - 오른쪽 상단 고정)
                 { deptName: '감사실', members: [{ position: '실장', name: '홍감사' }], x: 1680, y: 60, parentIndex: null, isIndependent: true },
 
-                // 2-4: 처
+                // 2-4: 처 (교직원 없는 깔끔한 박스)
                 { deptName: '교무처', members: [], x: 0, y: 0, parentIndex: 0 },
                 { deptName: '학생처', members: [], x: 0, y: 0, parentIndex: 0 },
                 { deptName: '기획처', members: [], x: 0, y: 0, parentIndex: 0 },
 
-                // 5-7: 교무처 하위 부서 (가로 레이아웃 포함)
+                // 5-7: 교무처 하위 부서
                 {
                     deptName: '교육혁신팀',
                     members: [
                         { position: '팀장', name: '박혁신' },
-                        { position: '과장', name: '이교육' },
-                        { position: '주임', name: '정개발' }
+                        { position: '과장', name: '이교육' }
                     ],
                     x: 0, y: 0, parentIndex: 2,
                     layoutDirection: 'horizontal'
                 },
-                { deptName: '교수학습지원센터', members: [{ position: '센터장', name: '김교수' }], x: 0, y: 0, parentIndex: 2 },
-                {
-                    deptName: '교무팀',
-                    members: [
-                        { position: '팀장', name: '최교무' },
-                        { position: '과장', name: '안행정' }
-                    ],
-                    x: 0, y: 0, parentIndex: 2,
-                    layoutDirection: 'horizontal'
-                },
+                { deptName: '교무팀', members: [{ position: '팀장', name: '최교무' }], x: 0, y: 0, parentIndex: 2 },
 
-                // 8-10: 학생처 하위 부서
+                // 8-9: 학생처 하위 부서
                 { deptName: '학생지원팀', members: [{ position: '팀장', name: '윤학생' }, { position: '주임', name: '서지원' }], x: 0, y: 0, parentIndex: 3 },
                 { deptName: '상담센터', members: [{ position: '센터장', name: '문상담' }], x: 0, y: 0, parentIndex: 3 },
-                { deptName: '취창업지원센터', members: [{ position: '센터장', name: '강취업' }], x: 0, y: 0, parentIndex: 3 },
 
-                // 11-13: 기획처 하위 부서
+                // 10-12: 기획처 하위 부서
                 { deptName: '기획예산팀', members: [{ position: '팀장', name: '장기획' }], x: 0, y: 0, parentIndex: 4 },
                 {
                     deptName: '대외협력팀',
                     members: [
                         { position: '팀장', name: '오협력' },
-                        { position: '과장', name: '신국제' },
-                        { position: '주임', name: '조교류' }
+                        { position: '과장', name: '신국제' }
                     ],
                     x: 0, y: 0, parentIndex: 4,
                     layoutDirection: 'horizontal'
                 },
                 { deptName: '홍보팀', members: [{ position: '팀장', name: '한홍보' }], x: 0, y: 0, parentIndex: 4 },
 
-                // 14: 노동조합 (독립 노드 - 왼쪽 상단 고정)
-                { deptName: '노동조합', members: [{ position: '위원장', name: '권노동' }], x: 30, y: 60, parentIndex: null, isIndependent: true },
-
-                // 15: 교무처 추가 하위 부서 (교육혁신팀의 자식)
-                { deptName: '학사운영팀', members: [{ position: '과장', name: '임학사' }, { position: '주임', name: '배운영' }], x: 0, y: 0, parentIndex: 5 },
-
-                // 16: 학생처 추가 하위 부서
-                {
-                    deptName: '학생복지팀',
-                    members: [
-                        { position: '팀장', name: '유복지' },
-                        { position: '과장', name: '양학생' }
-                    ],
-                    x: 0, y: 0, parentIndex: 8,
-                    layoutDirection: 'horizontal'
-                }
+                // 13: 노동조합 (독립 노드 - 왼쪽 상단 고정)
+                { deptName: '노동조합', members: [{ position: '위원장', name: '권노동' }], x: 30, y: 60, parentIndex: null, isIndependent: true }
             ]
         };
     }
