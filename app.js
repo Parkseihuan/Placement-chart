@@ -42,8 +42,8 @@ class OrgChartApp {
         this.nextGroupId = 1;
 
         // 노드 간격 설정
-        this.horizontalSpacing = 65; // 수평 간격 (형제 노드)
-        this.verticalSpacing = 55; // 수직 간격 (부모-자식)
+        this.horizontalSpacing = 85; // 수평 간격 (형제 노드)
+        this.verticalSpacing = 75; // 수직 간격 (부모-자식)
         this.memberGap = 4; // 직원 항목 간격 (위아래)
 
         // 버전 관리
@@ -2644,14 +2644,16 @@ class OrgChartApp {
             }
         });
 
-        // Auto layout for clean arrangement
-        this.autoLayout();
-
-        // Reset zoom level
-        this.zoomReset();
-
-        this.saveState();
-        this.saveToLocalStorage();
+        // DOM 렌더링 완료 후 자동 배치 실행
+        // requestAnimationFrame을 두 번 사용하여 브라우저가 레이아웃 계산을 완료하도록 함
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                this.autoLayout();
+                this.zoomReset();
+                this.saveState();
+                this.saveToLocalStorage();
+            });
+        });
 
         alert('샘플 데이터로 초기화되었습니다.');
     }
@@ -2663,7 +2665,7 @@ class OrgChartApp {
                 { deptName: '총장', members: [{ position: '총장', name: '김용인' }], x: 0, y: 0, parentIndex: null },
 
                 // 1: 감사실 (독립 노드 - 오른쪽 상단 고정)
-                { deptName: '감사실', members: [{ position: '실장', name: '홍감사' }], x: 1600, y: 80, parentIndex: null, isIndependent: true },
+                { deptName: '감사실', members: [{ position: '실장', name: '홍감사' }], x: 1680, y: 60, parentIndex: null, isIndependent: true },
 
                 // 2-4: 처
                 { deptName: '교무처', members: [], x: 0, y: 0, parentIndex: 0 },
@@ -2712,9 +2714,9 @@ class OrgChartApp {
                 { deptName: '홍보팀', members: [{ position: '팀장', name: '한홍보' }], x: 0, y: 0, parentIndex: 4 },
 
                 // 14: 노동조합 (독립 노드 - 왼쪽 상단 고정)
-                { deptName: '노동조합', members: [{ position: '위원장', name: '권노동' }], x: 100, y: 80, parentIndex: null, isIndependent: true },
+                { deptName: '노동조합', members: [{ position: '위원장', name: '권노동' }], x: 30, y: 60, parentIndex: null, isIndependent: true },
 
-                // 15: 교무처 추가 하위 부서
+                // 15: 교무처 추가 하위 부서 (교육혁신팀의 자식)
                 { deptName: '학사운영팀', members: [{ position: '과장', name: '임학사' }, { position: '주임', name: '배운영' }], x: 0, y: 0, parentIndex: 5 },
 
                 // 16: 학생처 추가 하위 부서
